@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Group Manager - 설정</title>
+    <link rel="stylesheet" href="styles/options.css">
+</head>
+
+<body>
+    <div class="options-container">
+        <header class="options-header">
+            <h1>Tab Group Manager 설정</h1>
+        </header>
+
+        <main class="options-main">
+            <!-- Auto Grouping Settings -->
+            <section class="setting-section">
+                <h2>자동 그룹화</h2>
+                <div class="setting-item">
+                    <label for="auto-grouping-toggle">자동 그룹화 활성화</label>
+                    <input type="checkbox" id="auto-grouping-toggle" class="toggle-switch">
+                </div>
+            </section>
+
+            <!-- Session Restore Settings -->
+            <section class="setting-section">
+                <h2>세션 복원</h2>
+                <div class="setting-item">
+                    <label>복원 모드</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="restore-mode" value="full" id="restore-full">
+                            전체 복원 (종료 시점의 모든 탭과 그룹)
+                        </label>
+                        <label>
+                            <input type="radio" name="restore-mode" value="initial" id="restore-initial">
+                            초기 설정만 복원 (지정한 그룹과 탭만)
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Excluded Domains -->
+            <section class="setting-section">
+                <h2>제외 도메인</h2>
+                <div class="setting-item">
+                    <label for="excluded-domains">그룹화에서 제외할 도메인</label>
+                    <div class="excluded-domains-container">
+                        <div id="excluded-domains-list" class="domains-list">
+                            <!-- Excluded domains will be dynamically loaded here -->
+                        </div>
+                        <div class="add-domain-container">
+                            <input type="text" id="new-domain-input" placeholder="예: localhost, chrome://">
+                            <button id="add-domain-btn" class="btn btn-primary">추가</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File URL Permission -->
+            <section class="setting-section">
+                <h2>로컬 파일 접근</h2>
+                <div class="setting-item">
+                    <div id="file-permission-status" class="permission-status">
+                        <!-- Permission status will be dynamically loaded here -->
+                    </div>
+                    <button id="request-file-permission" class="btn btn-secondary">파일 URL 접근 권한 요청</button>
+                    <p class="help-text">로컬 파일을 디렉토리별로 그룹화하려면 파일 URL 접근 권한이 필요합니다.</p>
+                </div>
+            </section>
+
+            <!-- Save Settings -->
+            <section class="setting-section">
+                <div class="setting-actions">
+                    <button id="save-settings-btn" class="btn btn-primary">설정 저장</button>
+                    <button id="reset-settings-btn" class="btn btn-secondary">기본값으로 재설정</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+
+</html>

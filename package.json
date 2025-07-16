@@ -1,0 +1,38 @@
+{
+  "name": "auto-tab-grouping",
+  "version": "1.0.0",
+  "description": "Chrome extension for automatic tab grouping by domain with preset management",
+  "main": "background.js",
+  "scripts": {
+    "build": "npm run build:css",
+    "build:css": "mkdir -p styles && echo 'CSS build placeholder'",
+    "dev": "npm run watch:css",
+    "watch:css": "echo 'CSS watch placeholder'",
+    "test": "echo 'Tests will be added in later tasks'",
+    "lint": "echo 'Linting will be added in later tasks'",
+    "package": "zip -r auto-tab-grouping.zip . -x 'node_modules/*' '*.git*' 'package-lock.json' '*.md' '.DS_Store'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "tab-management",
+    "productivity",
+    "browser-extension",
+    "tab-grouping"
+  ],
+  "author": "Tab Group Manager Team",
+  "license": "MIT",
+  "devDependencies": {
+    "web-ext": "^7.8.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "bugs": {
+    "url": "."
+  },
+  "homepage": "."
+}

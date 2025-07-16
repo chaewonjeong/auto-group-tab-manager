@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Group Manager - 시작하기</title>
+    <link rel="stylesheet" href="styles/onboarding.css">
+</head>
+
+<body>
+    <div class="onboarding-container">
+        <header class="onboarding-header">
+            <h1>Tab Group Manager에 오신 것을 환영합니다!</h1>
+            <p>탭을 자동으로 그룹화하여 더 체계적인 브라우징 경험을 시작하세요.</p>
+        </header>
+
+        <main class="onboarding-main">
+            <!-- Feature Introduction -->
+            <section class="intro-section">
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <h3>🗂️ 자동 그룹화</h3>
+                        <p>새로 열리는 탭이 도메인별로 자동으로 그룹화됩니다.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>💾 프리셋 관리</h3>
+                        <p>자주 사용하는 탭 구성을 프리셋으로 저장하고 재사용하세요.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>🔄 세션 복원</h3>
+                        <p>브라우저 재시작 후에도 중요한 탭 그룹을 복원합니다.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>🧭 탭 네비게이터</h3>
+                        <p>모든 탭과 그룹을 한눈에 보고 쉽게 관리하세요.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Initial Setup -->
+            <section class="setup-section">
+                <h2>초기 설정</h2>
+                <div class="setup-options">
+                    <p>기존에 열려있는 탭들을 어떻게 처리할까요?</p>
+
+                    <div class="option-group">
+                        <label class="option-card">
+                            <input type="radio" name="initial-setup" value="apply-existing" id="apply-existing">
+                            <div class="option-content">
+                                <h3>기존 탭에도 적용</h3>
+                                <p>현재 열려있는 모든 탭을 도메인별로 그룹화합니다.</p>
+                            </div>
+                        </label>
+
+                        <label class="option-card">
+                            <input type="radio" name="initial-setup" value="new-tabs-only" id="new-tabs-only" checked>
+                            <div class="option-content">
+                                <h3>새로 열리는 탭부터 적용</h3>
+                                <p>기존 탭은 그대로 두고, 새로 열리는 탭부터만 그룹화합니다.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Get Started Button -->
+            <section class="start-section">
+                <button id="get-started-btn" class="btn btn-primary btn-large">Get Started</button>
+                <p class="help-text">언제든지 확장 아이콘을 클릭하여 설정을 변경할 수 있습니다.</p>
+            </section>
+        </main>
+    </div>
+
+    <script src="onboarding.js"></script>
+</body>
+
+</html>

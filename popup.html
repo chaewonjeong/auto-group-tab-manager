@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Group Manager</title>
+    <link rel="stylesheet" href="styles/popup.css">
+</head>
+
+<body>
+    <div class="popup-container">
+        <header class="popup-header">
+            <h1>Tab Group Manager</h1>
+        </header>
+
+        <main class="popup-main">
+            <!-- Tab Navigator Toggle -->
+            <section class="navigator-section">
+                <div class="toggle-container">
+                    <label for="navigator-toggle">탭 네비게이터</label>
+                    <input type="checkbox" id="navigator-toggle" class="toggle-switch">
+                </div>
+            </section>
+
+            <!-- Presets Section -->
+            <section class="presets-section">
+                <h2>프리셋</h2>
+                <div id="presets-list" class="presets-list">
+                    <!-- Presets will be dynamically loaded here -->
+                </div>
+                <button id="save-preset-btn" class="btn btn-primary">현재 상태를 프리셋으로 저장</button>
+            </section>
+
+            <!-- Settings Link -->
+            <section class="settings-section">
+                <button id="settings-btn" class="btn btn-secondary">설정</button>
+            </section>
+        </main>
+    </div>
+
+    <!-- Save Preset Modal -->
+    <div id="save-preset-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>프리셋 저장</h3>
+            <input type="text" id="preset-name-input" placeholder="프리셋 이름을 입력하세요">
+            <div class="modal-actions">
+                <button id="save-preset-confirm" class="btn btn-primary">저장</button>
+                <button id="save-preset-cancel" class="btn btn-secondary">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
