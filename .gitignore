@@ -1,0 +1,35 @@
+# Kiro IDE 설정 폴더
+.kiro/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 운영체제
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 빌드 결과물
+dist/
+build/
+*.zip
+
+# 로그 파일
+*.log
+
+# 임시 파일
+*.tmp
+*.temp
