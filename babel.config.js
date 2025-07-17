@@ -3,7 +3,8 @@
  * Jest 테스트 환경에서 ES6+ 문법을 지원하기 위한 설정
  */
 
-module.exports = {
+// CommonJS -> ESM 변환
+export default {
   presets: [
     [
       '@babel/preset-env',

@@ -68,9 +68,19 @@ resetSettingsBtn.addEventListener('click', () => {
 });
 
 // Helper functions - placeholders for future implementation
+import { ExcludedDomainsList } from '../../components/ExcludedDomainsList.js';
+
 function renderExcludedDomains(domains) {
-  console.log('Rendering excluded domains:', domains);
-  // TODO: Implement domain list rendering
+  const listContainer = document.getElementById('excluded-domains-list');
+  listContainer.innerHTML = '';
+  listContainer.appendChild(
+    ExcludedDomainsList({
+      domains,
+      onRemove: (domain) => {
+        removeDomain(domain);
+      },
+    })
+  );
 }
 
 function removeDomain(domain) {

@@ -2,6 +2,8 @@
 
 Chrome extension for automatic tab grouping by domain with preset management and session restoration.
 
+---
+
 ## Features
 
 - 🗂️ **Automatic Tab Grouping**: New tabs are automatically grouped by domain
@@ -10,60 +12,55 @@ Chrome extension for automatic tab grouping by domain with preset management and
 - 🧭 **Tab Navigator**: Visual sidebar to manage all tabs and groups
 - ⚙️ **Customizable Settings**: Configure grouping behavior and excluded domains
 
-## Installation
+---
 
-1. Clone or download this repository
+## Installation (for Users)
+
+1. Download the latest release or build the extension (see below)
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the extension directory
+4. Click "Load unpacked" and select the **dist** directory
 5. The extension icon will appear in your toolbar
 
-## Project Structure
+---
+
+## Project Structure (Feature-based, Webpack Bundled)
 
 ```
 auto-tab/
 ├── src/
-│   ├── core/
-│   │   ├── color-manager.js
-│   │   ├── domain-analyzer.js
-│   │   ├── tab-group-manager.js
-│   │   └── test/
-│   │       ├── color-manager.test.js
-│   │       ├── domain-analyzer.test.js
-│   │       └── tab-group-manager.test.js
-│   ├── utils/
-│   │   ├── api-utils.js
-│   │   ├── storage-utils.js
-│   │   └── test/
-│   │       └── api-utils.test.js
-├── tests/
-│   └── setup.js
-├── styles/
-│   ├── popup.css
-│   ├── onboarding.css
-│   └── options.css
-├── icons/
-│   └── icon.svg
-├── background.js
-├── manifest.json
-├── popup.html / popup.js
-├── options.html / options.js
-├── onboarding.html / onboarding.js
-├── navigator.js
-├── README.md
+│   ├── core/                # Business logic (domain, color, tab group, etc.)
+│   ├── utils/               # Utility functions
+│   ├── components/          # Pure UI components (Vanilla JS)
+│   ├── features/
+│   │   ├── popup/           # Popup page (JS, HTML, CSS)
+│   │   ├── options/         # Options/settings page
+│   │   └── onboarding/      # Onboarding/first-run page
+│   ├── assets/
+│   │   └── icons/           # Extension icons
+│   └── background/          # Service worker entry (index.js)
+├── dist/                    # Webpack build output (for Chrome load)
+│   ├── background.js
+│   ├── popup.html / popup.js / Popup.css
+│   ├── options.html / options.js / Options.css
+│   ├── onboarding.html / onboarding.js / Onboarding.css
+│   ├── assets/icons/
+│   ├── manifest.json
+│   └── navigator.js
+├── tests/                   # Jest setup and e2e/integration tests
+├── config/                  # (이전) 설정 파일 보관용
+├── manifest.json            # Source manifest (copied to dist)
+├── webpack.config.js
+├── babel.config.js
+├── jest.config.js
 ├── package.json / package-lock.json
-├── jest.config.js / babel.config.js
-├── .gitignore
-├── .vscode/
-├── .kiro/
-├── .cursor/
+├── README.md
+└── 기타 설정/숨김 파일
 ```
 
-- 서비스 코드와 테스트는 src 하위에만 존재
-- tests/ 폴더는 Jest 환경 설정만 유지
-- legacy 테스트/실험 파일은 모두 삭제됨
+---
 
-## Development & Testing
+## Development & Build
 
 ```bash
 # Install dependencies
@@ -71,10 +68,16 @@ npm install
 
 # Run all tests (Jest)
 npm test
+
+# Build extension (outputs to /dist)
+npm run build
 ```
 
-- 테스트는 src/core/test, src/utils/test 등 각 모듈별 test 폴더에 위치
-- 테스트 커버리지, watch 모드 등은 jest 옵션 참고
+- **src/**에서 개발, **dist/**에서 크롬 확장 로드
+- Webpack이 JS/HTML/CSS/manifest/assets를 번들링 및 복사
+- import/export, 모듈화, ES6+ 문법 자유롭게 사용 가능
+
+---
 
 ## Usage
 
@@ -107,6 +110,8 @@ Access settings through the extension popup or right-click the extension icon:
 - **Excluded Domains**: Specify domains that should not be grouped
 - **File URL Access**: Enable grouping for local files
 
+---
+
 ## Permissions
 
 The extension requires the following permissions:
@@ -118,6 +123,8 @@ The extension requires the following permissions:
 - `<all_urls>`: To group tabs from any website
 - `file:///*` (optional): To group local files by directory
 
+---
+
 ## Privacy
 
 This extension:
@@ -127,9 +134,16 @@ This extension:
 - Stores settings and presets using Chrome's local storage API
 - Only accesses tab URLs for grouping purposes
 
+---
+
 ## Contributing
 
-This extension is built following Chrome Extension Manifest V3 best practices. Contributions are welcome!
+- Feature-based, modular architecture
+- Webpack + Babel + Jest 기반 개발 환경
+- Chrome Extension Manifest V3 best practices 준수
+- Contributions are welcome!
+
+---
 
 ## License
 

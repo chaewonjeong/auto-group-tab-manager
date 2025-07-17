@@ -3,7 +3,8 @@
  * Chrome Extension 테스트를 위한 환경 구성
  */
 
-module.exports = {
+// CommonJS -> ESM 변환
+export default {
   // 테스트 환경 설정
   testEnvironment: 'jsdom',
 

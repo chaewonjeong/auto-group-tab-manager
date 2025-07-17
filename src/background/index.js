@@ -6,11 +6,11 @@
  * 이벤트 리스너와 초기화만 담당합니다.
  */
 
-import DomainAnalyzer from './src/core/domain-analyzer.js';
-import ColorManager from './src/core/color-manager.js';
-import TabGroupManager from './src/core/tab-group-manager.js';
-import StorageUtils from './src/utils/storage-utils.js';
-import APIUtils from './src/utils/api-utils.js';
+import DomainAnalyzer from '../core/domain-analyzer.js';
+import ColorManager from '../core/color-manager.js';
+import TabGroupManager from '../core/tab-group-manager.js';
+import StorageUtils from '../utils/storage-utils.js';
+import APIUtils from '../utils/api-utils.js';
 
 export {};
 
