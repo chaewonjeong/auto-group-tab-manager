@@ -195,6 +195,76 @@ class TabGroupManager {
       return false;
     }
   }
+
+  /**
+   * 빈 그룹들을 정리합니다.
+   * @returns {Promise<boolean>} 정리 성공 여부
+   */
+  static async cleanupEmptyGroups() {
+    try {
+      const groups = await chrome.tabGroups.query({});
+
+      for (const group of groups) {
+        const tabsInGroup = await chrome.tabs.query({ groupId: group.id });
+
+        // 그룹에 탭이 없으면 삭제
+        if (tabsInGroup.length === 0) {
+          // Chrome API에서는 빈 그룹이 자동으로 삭제되지만
+          // 명시적으로 정리 로직 수행
+          console.log(
+            `Empty group ${group.title} will be auto-removed by Chrome`
+          );
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to cleanup empty groups:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 탭을 그룹에서 제거합니다.
+   * @param {number} tabId - 탭 ID
+   * @returns {Promise<boolean>} 제거 성공 여부
+   */
+  static async removeTabFromGroup(tabId) {
+    try {
+      await chrome.tabs.ungroup(tabId);
+      console.log(`탭 ${tabId}을 그룹에서 제거`);
+      return true;
+    } catch (error) {
+      console.error('탭 그룹 제거 중 오류:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 탭 URL 변경을 처리합니다.
+   * @param {number} tabId - 탭 ID
+   * @param {string} newUrl - 새로운 URL
+   * @param {string} oldUrl - 이전 URL
+   * @returns {Promise<boolean>} 처리 성공 여부
+   */
+  static async handleTabUrlChange(tabId, newUrl, oldUrl) {
+    try {
+      // TabReassignmentManager로 위임
+      const tab = await chrome.tabs.get(tabId);
+      const changeInfo = { url: oldUrl };
+
+      // 동적 import를 사용하여 순환 참조 방지
+      const { default: TabReassignmentManager } = await import(
+        '../managers/tab-reassignment-manager.js'
+      );
+      await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
+
+      return true;
+    } catch (error) {
+      console.error('탭 URL 변경 처리 중 오류:', error);
+      return false;
+    }
+  }
 }
 
 export default TabGroupManager;

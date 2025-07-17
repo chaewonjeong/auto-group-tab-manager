@@ -188,6 +188,22 @@ class DomainAnalyzer {
       return '';
     }
   }
+
+  /**
+   * 두 도메인을 비교합니다.
+   * @param {string} domain1 - 첫 번째 도메인
+   * @param {string} domain2 - 두 번째 도메인
+   * @returns {boolean} 도메인이 같은지 여부
+   */
+  static compareDomains(domain1, domain2) {
+    // 도메인 정규화 후 비교
+    const normalize = (domain) => {
+      if (!domain) return '';
+      return domain.toLowerCase().replace(/^www\./, '');
+    };
+
+    return normalize(domain1) === normalize(domain2);
+  }
 }
 
 export default DomainAnalyzer;

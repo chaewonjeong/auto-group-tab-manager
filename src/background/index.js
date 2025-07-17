@@ -11,6 +11,8 @@ import ColorManager from '../core/color-manager.js';
 import TabGroupManager from '../core/tab-group-manager.js';
 import StorageUtils from '../utils/storage-utils.js';
 import APIUtils from '../utils/api-utils.js';
+import TabReassignmentManager from '../managers/tab-reassignment-manager.js';
+import EventThrottler from '../utils/event-throttler.js';
 
 export {};
 
@@ -369,10 +371,20 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 // 탭 업데이트 이벤트
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   try {
-    // URL이 변경된 경우에만 처리
+    // URL이 변경된 경우 - 그룹 재할당 처리 (스로틀링 적용)
     if (changeInfo.url) {
-      console.log('탭 URL 업데이트됨:', tabId, changeInfo.url);
-      await processTab(tab);
+      console.log('탭 URL 업데이트됨:', tabId, changeInfo.url, '→', tab.url);
+
+      // 자동 그룹화가 활성화된 경우에만 처리
+      if (state.isAutoGroupingEnabled) {
+        // EventThrottler를 사용하여 과도한 URL 변경 이벤트 방지
+        await EventThrottler.throttledUpdate(
+          tabId,
+          changeInfo,
+          tab,
+          TabReassignmentManager.handleTabUpdate.bind(TabReassignmentManager)
+        );
+      }
     }
 
     // 로딩 완료 시에도 처리 (URL이 늦게 설정되는 경우 대비)
