@@ -76,4 +76,5 @@ export default {
     splitChunks: false,
   },
   target: 'web',
+  devtool: 'source-map',
 };
