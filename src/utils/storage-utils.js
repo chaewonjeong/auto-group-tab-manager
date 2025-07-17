@@ -194,6 +194,38 @@ class StorageUtils {
   }
 
   /**
+   * 범용 데이터 저장 메서드
+   * @param {string} key - 저장할 키
+   * @param {any} data - 저장할 데이터
+   * @returns {Promise<boolean>} 저장 성공 여부
+   */
+  static async saveData(key, data) {
+    try {
+      await chrome.storage.local.set({ [key]: data });
+      console.log(`데이터 저장 완료: ${key}`);
+      return true;
+    } catch (error) {
+      console.error(`데이터 저장 중 오류 발생 (${key}):`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 범용 데이터 로드 메서드
+   * @param {string} key - 로드할 키
+   * @returns {Promise<any>} 로드된 데이터 또는 null
+   */
+  static async loadData(key) {
+    try {
+      const data = await chrome.storage.local.get(key);
+      return data[key] || null;
+    } catch (error) {
+      console.error(`데이터 로드 중 오류 발생 (${key}):`, error);
+      return null;
+    }
+  }
+
+  /**
    * 저장소 사용량을 확인합니다.
    * @returns {Promise<Object>} 사용량 정보
    */
