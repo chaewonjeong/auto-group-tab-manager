@@ -1,5 +1,6 @@
-# Kiro IDE 설정 폴더
+# AI IDE 설정 폴더
 .kiro/
+.cursor/
 
 # Node.js
 node_modules/

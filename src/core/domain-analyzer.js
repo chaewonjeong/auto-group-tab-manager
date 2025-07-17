@@ -134,7 +134,7 @@ class DomainAnalyzer {
    * @returns {boolean} 파일 URL 여부
    */
   static isFileUrl(url) {
-    return url && url.startsWith('file://');
+    return Boolean(url && typeof url === 'string' && url.startsWith('file://'));
   }
 
   /**
@@ -189,3 +189,5 @@ class DomainAnalyzer {
     }
   }
 }
+
+export default DomainAnalyzer;

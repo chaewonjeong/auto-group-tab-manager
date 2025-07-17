@@ -211,3 +211,5 @@ class StorageUtils {
     }
   }
 }
+
+export default StorageUtils;

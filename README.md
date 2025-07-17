@@ -18,45 +18,63 @@ Chrome extension for automatic tab grouping by domain with preset management and
 4. Click "Load unpacked" and select the extension directory
 5. The extension icon will appear in your toolbar
 
-## Development
-
-### Project Structure
+## Project Structure (2024 리팩토링 기준)
 
 ```
-auto-tab-grouping/
-├── manifest.json          # Extension manifest (Manifest V3)
-├── background.js          # Service Worker for tab management
-├── popup.html/js          # Extension popup interface
-├── options.html/js        # Settings page
-├── onboarding.html/js     # First-time setup wizard
-├── navigator.js           # Content script for tab navigator
-├── styles/                # CSS files
+auto-tab/
+├── src/
+│   ├── core/
+│   │   ├── color-manager.js
+│   │   ├── domain-analyzer.js
+│   │   ├── tab-group-manager.js
+│   │   └── test/
+│   │       ├── color-manager.test.js
+│   │       ├── domain-analyzer.test.js
+│   │       └── tab-group-manager.test.js
+│   ├── utils/
+│   │   ├── api-utils.js
+│   │   ├── storage-utils.js
+│   │   └── test/
+│   │       └── api-utils.test.js
+├── tests/
+│   └── setup.js
+├── styles/
 │   ├── popup.css
-│   ├── options.css
-│   └── onboarding.css
-├── icons/                 # Extension icons
-└── package.json           # Development dependencies
+│   ├── onboarding.css
+│   └── options.css
+├── icons/
+│   └── icon.svg
+├── background.js
+├── manifest.json
+├── popup.html / popup.js
+├── options.html / options.js
+├── onboarding.html / onboarding.js
+├── navigator.js
+├── README.md
+├── package.json / package-lock.json
+├── jest.config.js / babel.config.js
+├── .gitignore
+├── .vscode/
+├── .kiro/
+├── .cursor/
 ```
 
-### Development Setup
+- 서비스 코드와 테스트는 src 하위에만 존재
+- tests/ 폴더는 Jest 환경 설정만 유지
+- legacy 테스트/실험 파일은 모두 삭제됨
+
+## Development & Testing
 
 ```bash
-# Install development dependencies
+# Install dependencies
 npm install
 
-# Package extension for distribution
-npm run package
+# Run all tests (Jest)
+npm test
 ```
 
-### Architecture
-
-The extension uses Chrome's Manifest V3 architecture:
-
-- **Service Worker** (`background.js`): Handles tab events and core logic
-- **Popup UI** (`popup.html`): Main interface for presets and settings
-- **Content Script** (`navigator.js`): Injects tab navigator into web pages
-- **Options Page** (`options.html`): Comprehensive settings management
-- **Onboarding** (`onboarding.html`): First-time setup experience
+- 테스트는 src/core/test, src/utils/test 등 각 모듈별 test 폴더에 위치
+- 테스트 커버리지, watch 모드 등은 jest 옵션 참고
 
 ## Usage
 

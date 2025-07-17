@@ -276,3 +276,5 @@ class APIUtils {
     return results;
   }
 }
+
+export default APIUtils;

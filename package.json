@@ -8,9 +8,15 @@
     "build:css": "mkdir -p styles && echo 'CSS build placeholder'",
     "dev": "npm run watch:css",
     "watch:css": "echo 'CSS watch placeholder'",
-    "test": "echo 'Tests will be added in later tasks'",
-    "lint": "echo 'Linting will be added in later tasks'",
-    "package": "zip -r auto-tab-grouping.zip . -x 'node_modules/*' '*.git*' 'package-lock.json' '*.md' '.DS_Store'"
+    "test": "jest",
+    "test:legacy": "node test-runner.js",
+    "test:unit": "jest --testPathPattern=unit --run",
+    "test:integration": "jest --testPathPattern=integration --run",
+    "test:watch": "jest --watch",
+    "lint": "web-ext lint",
+    "lint:fix": "web-ext lint --fix",
+    "package": "zip -r auto-tab-grouping.zip . -x 'node_modules/*' '*.git*' 'package-lock.json' '*.md' '.DS_Store'",
+    "validate": "web-ext run --target=chromium --start-url=chrome://extensions/"
   },
   "keywords": [
     "chrome-extension",
@@ -22,7 +28,12 @@
   "author": "Tab Group Manager Team",
   "license": "MIT",
   "devDependencies": {
-    "web-ext": "^7.8.0"
+    "web-ext": "^7.8.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-jest": "^29.7.0"
   },
   "engines": {
     "node": ">=16.0.0"

@@ -1,3 +1,6 @@
+import DomainAnalyzer from './domain-analyzer.js';
+import ColorManager from './color-manager.js';
+
 /**
  * 탭 그룹 관리 클래스
  * 탭 그룹의 생성, 업데이트, 탭 할당을 담당합니다.
@@ -193,3 +196,5 @@ class TabGroupManager {
     }
   }
 }
+
+export default TabGroupManager;

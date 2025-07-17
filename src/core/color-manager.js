@@ -327,3 +327,5 @@ class ColorManager {
     return Math.max(0, 1 - standardDeviation / expected);
   }
 }
+
+export default ColorManager;
