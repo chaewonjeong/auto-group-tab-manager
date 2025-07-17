@@ -18,7 +18,7 @@ Chrome extension for automatic tab grouping by domain with preset management and
 4. Click "Load unpacked" and select the extension directory
 5. The extension icon will appear in your toolbar
 
-## Project Structure (2024 리팩토링 기준)
+## Project Structure
 
 ```
 auto-tab/
