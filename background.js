@@ -6,19 +6,13 @@
  * 이벤트 리스너와 초기화만 담당합니다.
  */
 
-// 모듈 로드
-try {
-  importScripts(
-    'src/core/domain-analyzer.js',
-    'src/core/color-manager.js',
-    'src/core/tab-group-manager.js',
-    'src/utils/storage-utils.js',
-    'src/utils/api-utils.js'
-  );
-  console.log('모든 모듈 로드 완료');
-} catch (error) {
-  console.error('모듈 로드 실패:', error);
-}
+import DomainAnalyzer from './src/core/domain-analyzer.js';
+import ColorManager from './src/core/color-manager.js';
+import TabGroupManager from './src/core/tab-group-manager.js';
+import StorageUtils from './src/utils/storage-utils.js';
+import APIUtils from './src/utils/api-utils.js';
+
+export {};
 
 // 전역 상태 관리
 const state = {
