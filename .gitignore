@@ -34,3 +34,6 @@ build/
 # 임시 파일
 *.tmp
 *.temp
+
+# 테스트 관련 파일
+coverage/
