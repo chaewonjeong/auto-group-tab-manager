@@ -14,16 +14,6 @@ Chrome extension for automatic tab grouping by domain with preset management and
 
 ---
 
-## Installation (for Users)
-
-1. Download the latest release or build the extension (see below)
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the **dist** directory
-5. The extension icon will appear in your toolbar
-
----
-
 ## Project Structure (Feature-based, Webpack Bundled)
 
 ```
@@ -57,6 +47,49 @@ auto-tab/
 ├── README.md
 └── 기타 설정/숨김 파일
 ```
+
+---
+
+## Architecture & Design Pattern
+
+### 계층 구조 및 책임 분리
+
+- **background/index.js**
+
+  - Chrome 이벤트(탭 생성/업데이트 등)를 **한 곳에서만** 리스닝
+  - 모든 탭 관련 처리는 **TabService**로 위임
+
+- **TabService**
+
+  - **비즈니스 정책/필터링의 단일 진입점**
+    - 도메인/사이트명 추출, 내부 페이지/제외 도메인/권한 체크 등 모든 정책 담당
+    - 그룹화/재할당 필요성 판단
+  - 하위 매니저(TabGroupManager, TabReassignmentManager)는 **직접 이벤트를 듣지 않고**, 오직 서비스에서 호출될 때만 동작
+  - 상태(state) 관리(외부에서 주입)
+
+- **TabGroupManager**
+
+  - **순수 그룹 조작만 담당**
+    - 그룹 생성/탭 할당/병합/정리 등
+    - 정책/판단 로직 없음 (siteName만 받아서 동작)
+
+- **TabReassignmentManager**
+  - **그룹 mismatch 감지 및 재할당만 담당**
+    - 그룹 title과 siteName 비교, 필요시 그룹 재할당
+    - 정책/필터링 없음 (모든 정책은 TabService에서만)
+
+### 설계 원칙
+
+- **이벤트 리스너 단일화**: background에서만 이벤트를 듣고, 서비스로 위임
+- **비즈니스 정책/필터링의 집중화**: TabService에서만 정책/필터링
+- **매니저의 순수 기능화**: TabGroupManager/TabReassignmentManager는 "명령만 수행"
+- **SRP(단일 책임 원칙) 준수**: 각 계층/모듈이 한 가지 역할만 담당
+
+### 이점
+
+- 정책/필터링이 한 곳(TabService)에 집중되어 유지보수/확장/테스트가 용이
+- 매니저는 순수하게 그룹 조작만 담당하므로, 재사용성과 예측 가능성 향상
+- 이벤트/정책/실행 계층이 명확히 분리되어 코드 가독성 및 안정성 증가
 
 ---
 
