@@ -9,44 +9,43 @@
 </head>
 
 <body>
-    <div class="popup-container">
+    <main class="popup-container">
         <header class="popup-header">
-            <h1>Tab Group Manager</h1>
+            <h1 class="popup-title">Tab Group Manager</h1>
+            <button id="navigatorToggle" class="navigator-toggle-btn">
+                네비게이터 켜기
+            </button>
         </header>
 
-        <main class="popup-main">
-            <!-- Tab Navigator Toggle -->
-            <section class="navigator-section">
-                <div class="toggle-container">
-                    <label for="navigator-toggle">탭 네비게이터</label>
-                    <input type="checkbox" id="navigator-toggle" class="toggle-switch">
-                </div>
-            </section>
+        <section class="preset-section">
+            <h2 class="section-title">프리셋</h2>
+            <div id="presetList" class="preset-list">
+                <!-- 프리셋 목록이 동적으로 생성됩니다 -->
+            </div>
+            <button id="savePresetBtn" class="save-preset-btn">
+                현재 상태 저장
+            </button>
+        </section>
 
-            <!-- Presets Section -->
-            <section class="presets-section">
-                <h2>프리셋</h2>
-                <div id="presets-list" class="presets-list">
-                    <!-- Presets will be dynamically loaded here -->
-                </div>
-                <button id="save-preset-btn" class="btn btn-primary">현재 상태를 프리셋으로 저장</button>
-            </section>
+        <footer class="popup-footer">
+            <a id="settingsLink" class="settings-link" href="#">
+                설정
+            </a>
+        </footer>
+    </main>
 
-            <!-- Settings Link -->
-            <section class="settings-section">
-                <button id="settings-btn" class="btn btn-secondary">설정</button>
-            </section>
-        </main>
-    </div>
-
-    <!-- Save Preset Modal -->
-    <div id="save-preset-modal" class="modal hidden">
+    <!-- 프리셋 저장 모달 -->
+    <div id="saveModal" class="modal">
         <div class="modal-content">
-            <h3>프리셋 저장</h3>
-            <input type="text" id="preset-name-input" placeholder="프리셋 이름을 입력하세요">
+            <h3 class="modal-title">프리셋 저장</h3>
+            <div class="input-group">
+                <label for="presetNameInput" class="input-label">프리셋 이름</label>
+                <input type="text" id="presetNameInput" class="preset-name-input" placeholder="프리셋 이름을 입력하세요"
+                    maxlength="50">
+            </div>
             <div class="modal-actions">
-                <button id="save-preset-confirm" class="btn btn-primary">저장</button>
-                <button id="save-preset-cancel" class="btn btn-secondary">취소</button>
+                <button id="confirmSaveBtn" class="confirm-btn">저장</button>
+                <button id="cancelSaveBtn" class="cancel-btn">취소</button>
             </div>
         </div>
     </div>

@@ -574,6 +574,77 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       });
       break;
 
+    // 팝업 UI 관련 메시지 처리
+    case 'GET_NAVIGATOR_STATUS':
+      sendResponse({ enabled: state.navigatorEnabled });
+      break;
+
+    case 'TOGGLE_NAVIGATOR':
+      state.navigatorEnabled = !state.navigatorEnabled;
+      saveSettings().then(() => {
+        sendResponse({ enabled: state.navigatorEnabled });
+      });
+      break;
+
+    case 'GET_PRESETS':
+      PresetService.getAllPresets(PresetManager)
+        .then((presets) => {
+          sendResponse({ presets: presets });
+        })
+        .catch((error) => {
+          console.error('프리셋 로드 실패:', error);
+          sendResponse({ presets: [], error: error.message });
+        });
+      break;
+
+    case 'SAVE_CURRENT_PRESET':
+      if (message.name) {
+        PresetService.saveCurrentAsPreset(message.name, PresetManager)
+          .then((result) => {
+            sendResponse({
+              success: result.success,
+              presetId: result.presetId,
+            });
+          })
+          .catch((error) => {
+            console.error('프리셋 저장 실패:', error);
+            sendResponse({ success: false, error: error.message });
+          });
+      } else {
+        sendResponse({ success: false, error: '프리셋 이름이 필요합니다.' });
+      }
+      break;
+
+    case 'RESTORE_PRESET':
+      if (message.presetId) {
+        PresetService.restorePreset(message.presetId, PresetManager)
+          .then((result) => {
+            sendResponse({ success: result.success });
+          })
+          .catch((error) => {
+            console.error('프리셋 복원 실패:', error);
+            sendResponse({ success: false, error: error.message });
+          });
+      } else {
+        sendResponse({ success: false, error: '프리셋 ID가 필요합니다.' });
+      }
+      break;
+
+    case 'DELETE_PRESET':
+      if (message.presetId) {
+        PresetService.deletePreset(message.presetId, PresetManager)
+          .then((result) => {
+            sendResponse({ success: result.success });
+          })
+          .catch((error) => {
+            console.error('프리셋 삭제 실패:', error);
+            sendResponse({ success: false, error: error.message });
+          });
+      } else {
+        sendResponse({ success: false, error: '프리셋 ID가 필요합니다.' });
+      }
+      break;
+
     default:
       console.warn('알 수 없는 메시지 타입:', message.type);
       sendResponse({ error: 'Unknown message type' });

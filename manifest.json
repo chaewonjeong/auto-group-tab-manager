@@ -14,7 +14,7 @@
   },
 
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/features/popup/popup.html",
     "default_title": "Tab Group Manager",
     "default_icon": "assets/icons/icon.svg"
   },
