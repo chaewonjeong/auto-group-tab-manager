@@ -9,7 +9,9 @@
 import StorageUtils from '../utils/storage-utils.js';
 import APIUtils from '../utils/api-utils.js';
 import PerformanceMonitor from '../utils/performance-monitor.js';
-import TabService, { setTabServiceState } from './TabService.js';
+import TabService from '../services/tab-service.js';
+import TabGroupManager from '../core/tab-group-manager.js';
+import TabReassignmentManager from '../managers/tab-reassignment-manager.js';
 import SessionService from '../services/session-service.js';
 import PresetService from '../services/preset-service.js';
 import PermissionService from '../services/permission-service.js';
@@ -337,7 +339,12 @@ chrome.runtime.onStartup.addListener(async () => {
 chrome.tabs.onCreated.addListener(async (tab) => {
   try {
     console.log('탭 생성됨:', tab.id, tab.url || '(URL 없음)');
-    await TabService.handleTabCreated(tab);
+    await TabService.handleTabCreated(
+      tab,
+      state,
+      TabGroupManager,
+      TabReassignmentManager
+    );
   } catch (error) {
     console.error('탭 생성 이벤트 처리 중 오류:', error);
   }
@@ -346,7 +353,13 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 // 탭 업데이트 이벤트
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   try {
-    await TabService.handleTabUpdated(tabId, changeInfo, tab);
+    await TabService.handleTabUpdated(
+      tabId,
+      changeInfo,
+      tab,
+      state,
+      TabReassignmentManager
+    );
   } catch (error) {
     console.error('탭 업데이트 이벤트 처리 중 오류:', error);
   }
@@ -494,8 +507,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           }
         });
 
-        // TabService 상태 동기화
-        setTabServiceState(state);
+        // 상태는 메시지 처리 시 직접 전달
 
         // 설정 저장
         saveSettings().then(() => {
