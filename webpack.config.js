@@ -12,8 +12,8 @@ export default {
   entry: {
     background: './src/background/index.js',
     popup: './src/features/popup/popup.js',
-    options: './src/features/options/Options.js',
-    onboarding: './src/features/onboarding/Onboarding.js',
+    options: './src/features/options/options.js',
+    onboarding: './src/features/onboarding/onboarding.js',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -47,12 +47,12 @@ export default {
     }),
     new HtmlWebpackPlugin({
       filename: 'options.html',
-      template: './src/features/options/Options.html',
+      template: './src/features/options/options.html',
       chunks: ['options'],
     }),
     new HtmlWebpackPlugin({
       filename: 'onboarding.html',
-      template: './src/features/onboarding/Onboarding.html',
+      template: './src/features/onboarding/onboarding.html',
       chunks: ['onboarding'],
     }),
     new CopyWebpackPlugin({
@@ -61,10 +61,10 @@ export default {
         { from: 'src/assets/icons', to: 'assets/icons' },
         { from: 'navigator.js', to: '.' },
         { from: 'src/features/popup/popup.css', to: 'popup.css' },
-        { from: 'src/features/options/Options.css', to: 'Options.css' },
+        { from: 'src/features/options/options.css', to: 'options.css' },
         {
-          from: 'src/features/onboarding/Onboarding.css',
-          to: 'Onboarding.css',
+          from: 'src/features/onboarding/onboarding.css',
+          to: 'onboarding.css',
         },
       ],
     }),
