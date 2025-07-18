@@ -1,12 +1,32 @@
 import StorageUtils from '../utils/storage-utils.js';
 
 /**
- * 프리셋 관리자 - 탭 그룹 프리셋 저장 및 복원
+ * 프리셋 관리자 - 순수 실행 기능만 담당 (정책 없음)
+ * 정책 결정은 PresetService에서 수행
  * Requirements: 2.2, 2.3, 2.4, 2.5, 9.1, 9.2, 9.3, 9.4
  */
 class PresetManager {
   /**
-   * 현재 탭 상태를 프리셋으로 저장
+   * 프리셋 데이터 저장 (순수 기능)
+   * @param {string} name 프리셋 이름
+   * @param {Object} presetData 프리셋 데이터
+   * @returns {Promise<boolean>} 저장 성공 여부
+   */
+  static async savePresetData(name, presetData) {
+    try {
+      const success = await StorageUtils.savePreset(name, presetData);
+      if (success) {
+        console.log(`프리셋 데이터 저장 완료: ${name}`);
+      }
+      return success;
+    } catch (error) {
+      console.error('프리셋 데이터 저장 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 현재 탭 상태를 프리셋으로 저장 (기존 호환성 유지)
    * @param {string} name 프리셋 이름
    * @returns {Promise<boolean>} 저장 성공 여부
    */
@@ -20,11 +40,7 @@ class PresetManager {
         groups,
       };
 
-      const success = await StorageUtils.savePreset(name, presetData);
-      if (success) {
-        console.log(`프리셋 저장 완료: ${name}`);
-      }
-      return success;
+      return await this.savePresetData(name, presetData);
     } catch (error) {
       console.error('프리셋 저장 실패:', error);
       return false;
@@ -32,21 +48,74 @@ class PresetManager {
   }
 
   /**
-   * 프리셋 로드
+   * 프리셋 데이터 로드 (순수 기능)
    * @param {string} name 프리셋 이름
    * @returns {Promise<Object|null>} 프리셋 데이터 또는 null
    */
-  static async loadPreset(name) {
+  static async loadPresetData(name) {
     try {
       return await StorageUtils.loadPreset(name);
     } catch (error) {
-      console.error('프리셋 로드 실패:', error);
+      console.error('프리셋 데이터 로드 실패:', error);
       return null;
     }
   }
 
   /**
-   * 프리셋을 새 윈도우에서 복원
+   * 프리셋 로드 (기존 호환성 유지)
+   * @param {string} name 프리셋 이름
+   * @returns {Promise<Object|null>} 프리셋 데이터 또는 null
+   */
+  static async loadPreset(name) {
+    return await this.loadPresetData(name);
+  }
+
+  /**
+   * 프리셋 데이터 복원 (순수 기능)
+   * @param {Object} presetData 프리셋 데이터
+   * @param {string} restoreMode 복원 모드
+   * @param {Object} conflictResolution 충돌 해결 정보
+   * @returns {Promise<boolean>} 복원 성공 여부
+   */
+  static async restorePresetData(
+    presetData,
+    restoreMode,
+    conflictResolution = null
+  ) {
+    try {
+      let windowId;
+
+      if (restoreMode === 'new-window') {
+        const window = await chrome.windows.create({});
+        windowId = window.id;
+      } else {
+        const currentWindow = await chrome.windows.getCurrent();
+        windowId = currentWindow.id;
+      }
+
+      // 충돌 해결이 있는 경우 해당 데이터만 복원
+      if (conflictResolution) {
+        await this.restoreTabsAndGroups(
+          {
+            tabs: conflictResolution.tabsToCreate,
+            groups: conflictResolution.groupsToCreate,
+          },
+          windowId
+        );
+      } else {
+        await this.restoreTabsAndGroups(presetData, windowId);
+      }
+
+      console.log(`프리셋 데이터 복원 완료 (${restoreMode} 모드)`);
+      return true;
+    } catch (error) {
+      console.error('프리셋 데이터 복원 실패:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 프리셋을 새 윈도우에서 복원 (기존 호환성 유지)
    * @param {string} name 프리셋 이름
    * @returns {Promise<boolean>} 복원 성공 여부
    */
@@ -58,14 +127,7 @@ class PresetManager {
         return false;
       }
 
-      // 새 윈도우 생성
-      const window = await chrome.windows.create({});
-
-      // 프리셋 복원
-      await this.restoreTabsAndGroups(preset, window.id);
-
-      console.log(`프리셋 복원 완료: ${name}`);
-      return true;
+      return await this.restorePresetData(preset, 'new-window');
     } catch (error) {
       console.error('프리셋 복원 실패:', error);
       return false;
@@ -144,46 +206,6 @@ class PresetManager {
   }
 
   /**
-   * 프리셋 데이터 유효성 검증
-   * @param {Object} presetData 프리셋 데이터
-   * @returns {boolean} 유효성 여부
-   */
-  static validatePresetData(presetData) {
-    if (!presetData || typeof presetData !== 'object') {
-      return false;
-    }
-
-    // 필수 필드 확인
-    if (
-      !presetData.name ||
-      typeof presetData.name !== 'string' ||
-      presetData.name.trim() === ''
-    ) {
-      return false;
-    }
-
-    if (!Array.isArray(presetData.tabs) || !Array.isArray(presetData.groups)) {
-      return false;
-    }
-
-    // 탭 데이터 검증
-    for (const tab of presetData.tabs) {
-      if (!tab.url || typeof tab.url !== 'string') {
-        return false;
-      }
-    }
-
-    // 그룹 데이터 검증
-    for (const group of presetData.groups) {
-      if (!group.title || typeof group.title !== 'string') {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
    * 프리셋 정보 조회
    * @param {string} name 프리셋 이름
    * @returns {Promise<Object>} 프리셋 정보
@@ -225,38 +247,33 @@ class PresetManager {
   }
 
   /**
-   * 프리셋 이름 중복 확인
+   * 프리셋 업데이트 (순수 기능)
    * @param {string} name 프리셋 이름
-   * @returns {Promise<boolean>} 중복 여부
+   * @param {Object} newData 새로운 프리셋 데이터
+   * @returns {Promise<boolean>} 업데이트 성공 여부
    */
-  static async isPresetNameExists(name) {
+  static async updatePresetData(name, newData) {
     try {
-      const preset = await this.loadPreset(name);
-      return preset !== null;
+      const success = await StorageUtils.savePreset(name, newData);
+      if (success) {
+        console.log(`프리셋 데이터 업데이트 완료: ${name}`);
+      }
+      return success;
     } catch (error) {
-      console.error('프리셋 이름 중복 확인 실패:', error);
-      return false;
+      console.error('프리셋 데이터 업데이트 실패:', error);
+      throw error;
     }
   }
 
   /**
-   * 프리셋 업데이트
+   * 프리셋 업데이트 (기존 호환성 유지)
    * @param {string} name 프리셋 이름
    * @param {Object} newData 새로운 프리셋 데이터
    * @returns {Promise<boolean>} 업데이트 성공 여부
    */
   static async updatePreset(name, newData) {
     try {
-      if (!this.validatePresetData({ name, ...newData })) {
-        console.error('유효하지 않은 프리셋 데이터');
-        return false;
-      }
-
-      const success = await StorageUtils.savePreset(name, newData);
-      if (success) {
-        console.log(`프리셋 업데이트 완료: ${name}`);
-      }
-      return success;
+      return await this.updatePresetData(name, newData);
     } catch (error) {
       console.error('프리셋 업데이트 실패:', error);
       return false;
