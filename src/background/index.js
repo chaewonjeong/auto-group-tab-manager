@@ -338,13 +338,25 @@ chrome.runtime.onStartup.addListener(async () => {
 // 탭 생성 이벤트
 chrome.tabs.onCreated.addListener(async (tab) => {
   try {
-    console.log('탭 생성됨:', tab.id, tab.url || '(URL 없음)');
-    await TabService.handleTabCreated(
+    console.log(
+      '탭 생성됨:',
+      tab.id,
+      tab.url || '(URL 없음)',
+      '상태:',
+      tab.status
+    );
+
+    // 탭 생성 시 즉시 그룹화하지 않고, 로딩 완료를 기다림
+    const result = await TabService.handleTabCreated(
       tab,
       state,
       TabGroupManager,
       TabReassignmentManager
     );
+
+    if (result.action === 'deferred') {
+      console.log(`탭 ${tab.id} 그룹화 지연됨: ${result.reason}`);
+    }
   } catch (error) {
     console.error('탭 생성 이벤트 처리 중 오류:', error);
   }
@@ -353,13 +365,28 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 // 탭 업데이트 이벤트
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   try {
-    await TabService.handleTabUpdated(
+    // 로딩 완료 시에만 상세 로그 출력
+    if (changeInfo.status === 'complete') {
+      console.log(`탭 로딩 완료: ${tabId} (${tab.url})`);
+    }
+
+    const result = await TabService.handleTabUpdated(
       tabId,
       changeInfo,
       tab,
       state,
       TabReassignmentManager
     );
+
+    // 결과에 따른 추가 로깅
+    if (result.success && result.results) {
+      const groupedResults = result.results.filter(
+        (r) => r.action === 'grouped'
+      );
+      if (groupedResults.length > 0) {
+        console.log(`탭 ${tabId} 그룹화 완료 (로딩 완료 후)`);
+      }
+    }
   } catch (error) {
     console.error('탭 업데이트 이벤트 처리 중 오류:', error);
   }

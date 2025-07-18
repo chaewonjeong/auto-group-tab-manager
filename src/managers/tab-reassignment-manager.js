@@ -1,4 +1,5 @@
 import TabGroupManager from '../core/tab-group-manager.js';
+import DomainAnalyzer from '../core/domain-analyzer.js';
 
 /**
  * 탭 URL 변경 시 그룹 재할당을 관리하는 클래스
@@ -13,17 +14,22 @@ class TabReassignmentManager {
    */
   static async handleTabUpdate(tabId, changeInfo, tab) {
     try {
-      if (!changeInfo.url) return;
-      const siteName = tab.siteName || '';
+      if (!changeInfo.url || !tab.url) return;
+
+      // DomainAnalyzer를 사용해서 사이트명 추출
+      const siteName = DomainAnalyzer.extractSiteName(tab.url);
+
       // 탭이 그룹에 속해 있지 않으면 새 그룹화 시도
       if (tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) {
         await TabGroupManager.createOrUpdateGroup(tab, siteName);
         return;
       }
+
       // 현재 그룹 정보 가져오기
       const currentGroup = await chrome.tabGroups.get(tab.groupId);
       const groupTitle = (currentGroup.title || '').toLowerCase().trim();
       const siteNameLower = siteName.toLowerCase().trim();
+
       if (groupTitle !== siteNameLower) {
         await this.reassignTabToCorrectGroup(tab, siteName, groupTitle);
       }

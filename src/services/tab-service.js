@@ -107,7 +107,7 @@ class TabService {
   static determineUpdateAction(changeInfo, tab, settings) {
     const actions = [];
 
-    // URL 변경 시
+    // URL 변경 시 - 재할당만 처리
     if (changeInfo.url) {
       const processDecision = this.shouldProcessTab(tab, settings);
 
@@ -130,15 +130,20 @@ class TabService {
       }
     }
 
-    // 로딩 완료 시
-    if (changeInfo.status === 'complete' && tab.url && tab.url !== '') {
+    // 로딩 완료 시 - URL 변경이 없는 경우에만 그룹화 시도
+    if (
+      changeInfo.status === 'complete' &&
+      tab.url &&
+      tab.url !== '' &&
+      !changeInfo.url
+    ) {
       const processDecision = this.shouldProcessTab(tab, settings);
 
       if (processDecision.shouldProcess) {
         actions.push({
           type: 'handle-loading-complete',
           priority: 'medium',
-          allowReassignment: !!changeInfo.url,
+          allowReassignment: false,
           data: {
             domain: processDecision.domain,
             siteName: processDecision.siteName,
@@ -245,7 +250,23 @@ class TabService {
       const { domain, siteName, isFileUrl } = processDecision;
       console.log(`탭 처리 시작 (${tab.id}): ${siteName} (${domain})`);
 
-      // 2. 그룹 재할당 정책 확인
+      // 2. 탭 로딩 상태 확인 - 로딩 중이면 그룹화 지연
+      if (
+        tab.status === 'loading' &&
+        !tab.url.startsWith('chrome://') &&
+        !tab.url.startsWith('file://')
+      ) {
+        console.log(
+          `탭 로딩 중 (${tab.id}): 그룹화 지연, 로딩 완료 후 처리 예정`
+        );
+        return {
+          success: true,
+          action: 'deferred',
+          reason: '로딩 완료 대기 중',
+        };
+      }
+
+      // 3. 그룹 재할당 정책 확인
       if (tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
         const currentGroup = await chrome.tabGroups.get(tab.groupId);
         const reassignDecision = this.shouldReassignTab(
@@ -284,14 +305,14 @@ class TabService {
         }
       }
 
-      // 3. 그룹 생성 전략 결정
+      // 4. 그룹 생성 전략 결정
       const creationStrategy = this.determineGroupCreationStrategy(
         tab,
         siteName,
         settings
       );
 
-      // 4. 실행 (Manager에게 위임)
+      // 5. 실행 (Manager에게 위임)
       const groupId = await TabGroupManager.createOrUpdateGroup(tab, siteName);
 
       if (groupId) {
@@ -352,10 +373,14 @@ class TabService {
 
           case 'handle-loading-complete':
             console.log(`탭 로딩 완료: ${tabId} (${tab.url})`);
+            // TabGroupManager를 별도로 import해서 사용
+            const TabGroupManager = (
+              await import('../core/tab-group-manager.js')
+            ).default;
             const creationResult = await this.handleTabCreated(
               tab,
               settings,
-              TabReassignmentManager.TabGroupManager, // 실제로는 주입받아야 함
+              TabGroupManager,
               TabReassignmentManager,
               action.allowReassignment
             );

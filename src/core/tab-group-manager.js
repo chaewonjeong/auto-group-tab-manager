@@ -45,7 +45,11 @@ class TabGroupManager {
       const existingGroup = await this.getExistingGroup(siteName, tab.windowId);
       if (existingGroup) {
         // 기존 그룹에 탭 추가
+        console.log(
+          `기존 그룹에 탭 추가: ${siteName} (ID: ${existingGroup.id})`
+        );
         await this.assignTabToGroup(tab.id, existingGroup.id);
+
         // 기존 그룹에 추가한 후에도 중복 그룹 확인 및 병합
         const duplicateGroups = await this.findDuplicateGroups(
           siteName,
@@ -57,8 +61,9 @@ class TabGroupManager {
         }
         return existingGroup.id;
       } else {
-        // 새 그룹 생성
-        const groupId = await this.createNewGroup(tab, siteName);
+        // 새 그룹 생성 - 원자적 작업으로 처리
+        console.log(`새 그룹 생성 시작: ${siteName}`);
+        const groupId = await this.createNewGroupAtomic(tab, siteName);
         return groupId;
       }
     } catch (error) {
@@ -75,16 +80,60 @@ class TabGroupManager {
    */
   static async createNewGroup(tab, siteName) {
     try {
+      // 탭과 함께 그룹을 생성하여 빈 그룹이 보이는 시간을 최소화
       const groupId = await chrome.tabs.group({ tabIds: [tab.id] });
+
+      // 그룹 생성과 동시에 제목과 색상을 설정하여 빈 그룹 상태를 최소화
       await chrome.tabGroups.update(groupId, {
         title: siteName,
         color: this.getGroupColor(siteName),
         collapsed: false,
       });
+
       console.log(`새 그룹 생성: ${siteName} (ID: ${groupId})`);
       return groupId;
     } catch (error) {
       console.error('새 그룹 생성 중 오류:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 원자적 그룹 생성 - 빈 그룹 상태를 최소화하는 개선된 버전
+   * @param {chrome.tabs.Tab} tab - 그룹화할 탭
+   * @param {string} siteName - 사이트명
+   * @returns {Promise<number|null>} 그룹 ID 또는 null
+   */
+  static async createNewGroupAtomic(tab, siteName) {
+    try {
+      // 1. 탭과 함께 그룹을 생성 (빈 그룹 상태 최소화)
+      const groupId = await chrome.tabs.group({ tabIds: [tab.id] });
+
+      // 2. 즉시 그룹 속성 설정 (제목과 색상을 동시에 설정)
+      const groupColor = this.getGroupColor(siteName);
+      await chrome.tabGroups.update(groupId, {
+        title: siteName,
+        color: groupColor,
+        collapsed: false,
+      });
+
+      console.log(
+        `새 그룹 생성 완료: ${siteName} (ID: ${groupId}, 색상: ${groupColor})`
+      );
+      return groupId;
+    } catch (error) {
+      console.error('원자적 그룹 생성 중 오류:', error);
+
+      // 실패 시 탭이 잘못된 그룹에 남아있을 수 있으므로 정리
+      try {
+        if (tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+          await chrome.tabs.ungroup(tab.id);
+          console.log(`실패한 그룹화 정리: 탭 ${tab.id} 그룹 해제`);
+        }
+      } catch (cleanupError) {
+        console.error('그룹화 실패 정리 중 오류:', cleanupError);
+      }
+
       return null;
     }
   }
