@@ -126,12 +126,20 @@ class TabService {
   static async handleTabUpdated(tabId, changeInfo, tab) {
     // siteName 항상 부착
     tab.siteName = DomainAnalyzer.extractSiteName(tab.url);
-    // URL이 변경된 경우 - 그룹 재할당 처리 (스로틀링 등은 background에서 처리)
+    const domain = DomainAnalyzer.extractDomain(tab.url);
+    // URL이 변경된 경우 - 그룹 재할당 처리 (정책/필터링은 여기서만)
     if (changeInfo.url) {
       console.log('탭 URL 업데이트됨:', tabId, changeInfo.url, '→', tab.url);
-      if (state.isAutoGroupingEnabled) {
-        await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
+      if (!state.isAutoGroupingEnabled) return;
+      if (!tab.url || tab.url === '') return;
+      if (DomainAnalyzer.isFileUrl(tab.url)) {
+        const hasPermission = await checkFileUrlPermission();
+        if (!hasPermission) return;
       }
+      if (domain === 'chrome://' || domain === 'chrome-extension://') return;
+      if (DomainAnalyzer.isExcludedDomain(domain, state.excludedDomains))
+        return;
+      await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
     }
     // 로딩 완료 시에도 처리 (URL이 늦게 설정되는 경우 대비)
     if (changeInfo.status === 'complete' && tab.url && tab.url !== '') {

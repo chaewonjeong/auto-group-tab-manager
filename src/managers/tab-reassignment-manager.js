@@ -10,7 +10,6 @@ class TabReassignmentManager {
    * @param {number} tabId - 탭 ID
    * @param {Object} changeInfo - 변경 정보
    * @param {chrome.tabs.Tab} tab - 탭 객체
-   * @param {string[]} [excludedSiteNames] - 제외 사이트명 목록 (외부에서 주입)
    */
   static async handleTabUpdate(tabId, changeInfo, tab) {
     try {
