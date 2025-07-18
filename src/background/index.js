@@ -148,18 +148,36 @@ async function processTab(tab, allowReassignment = false) {
       return;
     }
 
-    // 5. 이미 그룹화된 탭인지 확인 (재할당이 허용되지 않은 경우에만)
-    if (
-      !allowReassignment &&
-      tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE
-    ) {
-      console.log(
-        '이미 그룹화된 탭, 처리 건너뜀:',
-        tab.id,
-        'groupId:',
-        tab.groupId
-      );
-      return;
+    // 5. 이미 그룹화된 탭인지 확인 및 siteName mismatch 검사
+    if (tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+      // 현재 그룹 정보 가져오기
+      const currentGroup = await chrome.tabGroups.get(tab.groupId);
+      const groupTitle = (currentGroup.title || '').toLowerCase().trim();
+      const siteNameLower = siteName.toLowerCase().trim();
+
+      // siteName과 그룹 title 비교
+      if (groupTitle !== siteNameLower) {
+        console.log(
+          `processTab에서 mismatch 감지: 그룹 title '${groupTitle}' vs siteName '${siteName}' (탭 ${tab.id})`
+        );
+        // TabReassignmentManager로 재할당 위임
+        await TabReassignmentManager.reassignTabToCorrectGroup(
+          tab,
+          siteName,
+          groupTitle
+        );
+        return;
+      } else if (!allowReassignment) {
+        console.log(
+          '이미 올바른 그룹에 있는 탭, 처리 건너뜀:',
+          tab.id,
+          'groupId:',
+          tab.groupId,
+          'title:',
+          groupTitle
+        );
+        return;
+      }
     }
 
     // 6. 실제 그룹화 로직 실행 (성능 모니터링 포함)

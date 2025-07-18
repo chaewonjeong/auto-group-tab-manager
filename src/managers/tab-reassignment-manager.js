@@ -21,15 +21,34 @@ class TabReassignmentManager {
         return;
       }
 
-      const oldUrl = changeInfo.url;
-      const newUrl = tab.url;
+      // 현재 탭의 새 siteName 추출
+      const newSiteName = DomainAnalyzer.extractSiteName(tab.url);
+      console.log(`탭 ${tabId} URL 변경됨 → 새 siteName: ${newSiteName}`);
 
-      const oldDomain = DomainAnalyzer.extractSiteName(oldUrl);
-      const newDomain = DomainAnalyzer.extractSiteName(newUrl);
+      // 탭이 그룹에 속해 있지 않으면 새 그룹화 시도
+      if (tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) {
+        console.log(`그룹 없음, 새 그룹화 시도: ${tabId}`);
+        await TabGroupManager.createOrUpdateGroup(
+          tab,
+          DomainAnalyzer.extractDomain(tab.url)
+        );
+        return;
+      }
 
-      // 도메인이 변경된 경우에만 처리
-      if (!DomainAnalyzer.compareDomains(oldDomain, newDomain)) {
-        await this.reassignTabToCorrectGroup(tab, newDomain, oldDomain);
+      // 현재 그룹 정보 가져오기
+      const currentGroup = await chrome.tabGroups.get(tab.groupId);
+      const groupTitle = (currentGroup.title || '').toLowerCase().trim();
+      const newSiteNameLower = newSiteName.toLowerCase().trim();
+
+      // siteName과 그룹 title 비교
+      if (groupTitle !== newSiteNameLower) {
+        console.log(
+          `그룹 mismatch 감지: 그룹 title '${groupTitle}' vs 새 siteName '${newSiteName}' (탭 ${tabId})`
+        );
+        // 재할당 로직 실행
+        await this.reassignTabToCorrectGroup(tab, newSiteName, groupTitle);
+      } else {
+        console.log(`그룹 일치: '${groupTitle}' (탭 ${tabId}) - 재할당 불필요`);
       }
     } catch (error) {
       console.error('탭 업데이트 처리 중 오류:', error);

@@ -12,6 +12,7 @@ global.chrome = {
   },
   tabGroups: {
     TAB_GROUP_ID_NONE: -1,
+    get: jest.fn(),
   },
 };
 
@@ -46,18 +47,19 @@ describe('TabReassignmentManager', () => {
       expect(reassignSpy).not.toHaveBeenCalled();
     });
 
-    test('URL이 변경되면 도메인을 비교하고 재할당해야 함', async () => {
+    test('URL이 변경되고 그룹 title과 siteName이 다르면 재할당해야 함', async () => {
       const tabId = 1;
-      const changeInfo = { url: 'https://old-site.com' };
-      const tab = { id: 1, url: 'https://new-site.com' };
+      const changeInfo = { url: 'https://new-site.com' };
+      const tab = { id: 1, url: 'https://new-site.com', groupId: 2 };
 
       // DomainAnalyzer 모킹
-      jest
-        .spyOn(DomainAnalyzer, 'extractSiteName')
-        .mockReturnValueOnce('old-site') // oldUrl
-        .mockReturnValueOnce('new-site'); // newUrl
+      jest.spyOn(DomainAnalyzer, 'extractSiteName').mockReturnValue('new-site');
 
-      jest.spyOn(DomainAnalyzer, 'compareDomains').mockReturnValue(false); // 도메인이 다름
+      // Chrome API 모킹 - 현재 그룹 정보
+      global.chrome.tabGroups.get.mockResolvedValue({
+        id: 2,
+        title: 'old-site', // 그룹 title과 새 siteName이 다름
+      });
 
       const reassignSpy = jest
         .spyOn(TabReassignmentManager, 'reassignTabToCorrectGroup')
@@ -66,26 +68,24 @@ describe('TabReassignmentManager', () => {
       await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
 
       expect(DomainAnalyzer.extractSiteName).toHaveBeenCalledWith(
-        'https://old-site.com'
-      );
-      expect(DomainAnalyzer.extractSiteName).toHaveBeenCalledWith(
         'https://new-site.com'
       );
-      expect(DomainAnalyzer.compareDomains).toHaveBeenCalledWith(
-        'old-site',
-        'new-site'
-      );
+      expect(global.chrome.tabGroups.get).toHaveBeenCalledWith(2);
       expect(reassignSpy).toHaveBeenCalledWith(tab, 'new-site', 'old-site');
     });
 
-    test('도메인이 같으면 재할당하지 않아야 함', async () => {
+    test('그룹 title과 siteName이 같으면 재할당하지 않아야 함', async () => {
       const tabId = 1;
-      const changeInfo = { url: 'https://example.com/old-page' };
-      const tab = { id: 1, url: 'https://example.com/new-page' };
+      const changeInfo = { url: 'https://example.com/new-page' };
+      const tab = { id: 1, url: 'https://example.com/new-page', groupId: 2 };
 
-      jest.spyOn(DomainAnalyzer, 'extractSiteName').mockReturnValue('example'); // 같은 도메인
+      jest.spyOn(DomainAnalyzer, 'extractSiteName').mockReturnValue('example');
 
-      jest.spyOn(DomainAnalyzer, 'compareDomains').mockReturnValue(true); // 도메인이 같음
+      // Chrome API 모킹 - 현재 그룹 정보 (title과 siteName이 같음)
+      global.chrome.tabGroups.get.mockResolvedValue({
+        id: 2,
+        title: 'example', // 그룹 title과 siteName이 같음
+      });
 
       const reassignSpy = jest.spyOn(
         TabReassignmentManager,
@@ -95,6 +95,25 @@ describe('TabReassignmentManager', () => {
       await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
 
       expect(reassignSpy).not.toHaveBeenCalled();
+    });
+
+    test('탭이 그룹에 속하지 않으면 새 그룹화를 시도해야 함', async () => {
+      const tabId = 1;
+      const changeInfo = { url: 'https://new-site.com' };
+      const tab = { id: 1, url: 'https://new-site.com', groupId: -1 }; // 그룹 없음
+
+      jest.spyOn(DomainAnalyzer, 'extractSiteName').mockReturnValue('new-site');
+      jest
+        .spyOn(DomainAnalyzer, 'extractDomain')
+        .mockReturnValue('new-site.com');
+      jest.spyOn(TabGroupManager, 'createOrUpdateGroup').mockResolvedValue(3);
+
+      await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
+
+      expect(TabGroupManager.createOrUpdateGroup).toHaveBeenCalledWith(
+        tab,
+        'new-site.com'
+      );
     });
   });
 
