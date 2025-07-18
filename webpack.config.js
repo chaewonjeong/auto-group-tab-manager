@@ -11,7 +11,7 @@ export default {
   mode: 'production',
   entry: {
     background: './src/background/index.js',
-    popup: './src/features/popup/Popup.js',
+    popup: './src/features/popup/popup.js',
     options: './src/features/options/Options.js',
     onboarding: './src/features/onboarding/Onboarding.js',
   },
@@ -42,7 +42,7 @@ export default {
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
       filename: 'popup.html',
-      template: './src/features/popup/Popup.html',
+      template: './src/features/popup/popup.html',
       chunks: ['popup'],
     }),
     new HtmlWebpackPlugin({
@@ -60,7 +60,7 @@ export default {
         { from: 'manifest.json', to: '.' },
         { from: 'src/assets/icons', to: 'assets/icons' },
         { from: 'navigator.js', to: '.' },
-        { from: 'src/features/popup/Popup.css', to: 'Popup.css' },
+        { from: 'src/features/popup/popup.css', to: 'popup.css' },
         { from: 'src/features/options/Options.css', to: 'Options.css' },
         {
           from: 'src/features/onboarding/Onboarding.css',

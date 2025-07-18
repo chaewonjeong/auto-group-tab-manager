@@ -238,7 +238,7 @@ describe('PopupController', () => {
       await popupController.openSettings();
 
       expect(chrome.tabs.create).toHaveBeenCalledWith({
-        url: chrome.runtime.getURL('src/features/options/options.html'),
+        url: chrome.runtime.getURL('options.html'),
       });
     });
 

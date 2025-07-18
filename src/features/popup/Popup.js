@@ -324,7 +324,7 @@ class PopupController {
   async openSettings() {
     try {
       await chrome.tabs.create({
-        url: chrome.runtime.getURL('src/features/options/options.html'),
+        url: chrome.runtime.getURL('options.html'),
       });
       window.close();
     } catch (error) {
