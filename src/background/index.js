@@ -13,6 +13,7 @@ import StorageUtils from '../utils/storage-utils.js';
 import APIUtils from '../utils/api-utils.js';
 import TabReassignmentManager from '../managers/tab-reassignment-manager.js';
 import EventThrottler from '../utils/event-throttler.js';
+import PerformanceMonitor from '../utils/performance-monitor.js';
 
 export {};
 
@@ -54,6 +55,11 @@ async function initialize() {
     if (apiTest.errors.length > 0) {
       console.warn('API 연결 문제:', apiTest.errors);
     }
+
+    // 성능 모니터링 시작
+    PerformanceMonitor.startMemoryMonitoring();
+    PerformanceMonitor.startPeriodicReporting();
+    console.log('성능 모니터링 시작됨');
   } catch (error) {
     console.error('초기화 중 오류 발생:', error);
   }
@@ -92,7 +98,7 @@ async function checkFileUrlPermission() {
 }
 
 /**
- * 탭 처리 함수 - 실제 자동 그룹화 로직
+ * 탭 처리 함수 - 실제 자동 그룹화 로직 (성능 모니터링 포함)
  */
 async function processTab(tab) {
   // 유효한 URL이 없는 경우 처리하지 않음
@@ -109,7 +115,8 @@ async function processTab(tab) {
 
   console.log('탭 처리 시작:', tab.id, tab.url);
 
-  try {
+  // 성능 모니터링과 함께 탭 처리 실행
+  return await PerformanceMonitor.measureTime('tabProcessing', async () => {
     // 1. 도메인 추출 및 분석
     const domain = DomainAnalyzer.extractDomain(tab.url);
     const siteName = DomainAnalyzer.extractSiteName(tab.url);
@@ -150,9 +157,14 @@ async function processTab(tab) {
       return;
     }
 
-    // 6. 실제 그룹화 로직 실행
+    // 6. 실제 그룹화 로직 실행 (성능 모니터링 포함)
     console.log('자동 그룹화 시작:', tab.id, domain);
-    const groupId = await TabGroupManager.createOrUpdateGroup(tab, domain);
+    const groupId = await PerformanceMonitor.measureTime(
+      'groupCreation',
+      async () => {
+        return await TabGroupManager.createOrUpdateGroup(tab, domain);
+      }
+    );
 
     if (groupId) {
       console.log(
@@ -171,16 +183,7 @@ async function processTab(tab) {
     } else {
       console.warn('탭 그룹화 실패:', tab.id, domain);
     }
-  } catch (error) {
-    console.error(
-      '탭 처리 중 오류 발생:',
-      error,
-      'Tab ID:',
-      tab.id,
-      'URL:',
-      tab.url
-    );
-  }
+  });
 }
 
 /**
@@ -398,7 +401,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 });
 
 // 탭 제거 이벤트
-chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   try {
     console.log(
       '탭 제거됨:',
@@ -407,11 +410,21 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
       removeInfo.isWindowClosing
     );
 
-    // 탭 제거 시 그룹 정리 로직은 다음 태스크에서 구현
-    if (removeInfo.isWindowClosing) {
-      console.log('윈도우가 닫히면서 탭이 제거됨');
+    // 개별 탭이 제거된 경우에만 빈 그룹 정리 수행
+    if (!removeInfo.isWindowClosing) {
+      console.log('개별 탭 제거 - 빈 그룹 정리 시작');
+
+      // 잠시 대기 후 빈 그룹 정리 (Chrome이 그룹 상태를 업데이트할 시간 제공)
+      setTimeout(async () => {
+        try {
+          await TabGroupManager.cleanupEmptyGroups();
+          console.log('빈 그룹 정리 완료');
+        } catch (error) {
+          console.error('빈 그룹 정리 중 오류:', error);
+        }
+      }, 100);
     } else {
-      console.log('개별 탭이 제거됨');
+      console.log('윈도우가 닫히면서 탭이 제거됨 - 그룹 정리 생략');
     }
   } catch (error) {
     console.error('탭 제거 이벤트 처리 중 오류:', error);
@@ -524,6 +537,30 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       // 종합 테스트 실행
       runComprehensiveTest().then((results) => {
         sendResponse({ testResults: results });
+      });
+      break;
+
+    case 'GET_PERFORMANCE_REPORT':
+      // 성능 보고서 반환
+      const report = PerformanceMonitor.generateReport();
+      sendResponse({ performanceReport: report });
+      break;
+
+    case 'RESET_PERFORMANCE_METRICS':
+      // 성능 메트릭 초기화
+      PerformanceMonitor.reset();
+      sendResponse({
+        success: true,
+        message: '성능 메트릭이 초기화되었습니다.',
+      });
+      break;
+
+    case 'LOG_PERFORMANCE_REPORT':
+      // 성능 보고서 콘솔 출력
+      PerformanceMonitor.logReport();
+      sendResponse({
+        success: true,
+        message: '성능 보고서가 콘솔에 출력되었습니다.',
       });
       break;
 
