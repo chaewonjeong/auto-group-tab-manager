@@ -14,6 +14,7 @@ import APIUtils from '../utils/api-utils.js';
 import TabReassignmentManager from '../managers/tab-reassignment-manager.js';
 import EventThrottler from '../utils/event-throttler.js';
 import PerformanceMonitor from '../utils/performance-monitor.js';
+import TabService, { setTabServiceState } from './TabService.js';
 
 export {};
 
@@ -389,13 +390,7 @@ chrome.runtime.onStartup.addListener(async () => {
 chrome.tabs.onCreated.addListener(async (tab) => {
   try {
     console.log('탭 생성됨:', tab.id, tab.url || '(URL 없음)');
-
-    // 새 탭이 생성되면 처리 (URL이 있는 경우에만)
-    if (tab.url && tab.url !== '') {
-      await processTab(tab);
-    } else {
-      console.log('URL이 없는 새 탭, 처리 대기 중:', tab.id);
-    }
+    await TabService.handleTabCreated(tab);
   } catch (error) {
     console.error('탭 생성 이벤트 처리 중 오류:', error);
   }
@@ -404,29 +399,7 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 // 탭 업데이트 이벤트
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   try {
-    // URL이 변경된 경우 - 그룹 재할당 처리 (스로틀링 적용)
-    if (changeInfo.url) {
-      console.log('탭 URL 업데이트됨:', tabId, changeInfo.url, '→', tab.url);
-
-      // 자동 그룹화가 활성화된 경우에만 처리
-      if (state.isAutoGroupingEnabled) {
-        // EventThrottler를 사용하여 과도한 URL 변경 이벤트 방지
-        await EventThrottler.throttledUpdate(
-          tabId,
-          changeInfo,
-          tab,
-          TabReassignmentManager.handleTabUpdate.bind(TabReassignmentManager)
-        );
-      }
-    }
-
-    // 로딩 완료 시에도 처리 (URL이 늦게 설정되는 경우 대비)
-    if (changeInfo.status === 'complete' && tab.url && tab.url !== '') {
-      console.log('탭 로딩 완료:', tabId, tab.url);
-      // URL 변경이 있었다면 재할당 허용, 그렇지 않으면 새 탭만 처리
-      const allowReassignment = !!changeInfo.url;
-      await processTab(tab, allowReassignment);
-    }
+    await TabService.handleTabUpdated(tabId, changeInfo, tab);
   } catch (error) {
     console.error('탭 업데이트 이벤트 처리 중 오류:', error);
   }
@@ -557,7 +530,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           state.fileUrlPermissionGranted =
             message.settings.fileUrlPermissionGranted;
         }
-
+        // TabService 상태 동기화
+        setTabServiceState(state);
         // 설정 저장
         saveSettings().then(() => {
           sendResponse({ success: true });

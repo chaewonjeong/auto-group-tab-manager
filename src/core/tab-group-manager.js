@@ -1,4 +1,3 @@
-import DomainAnalyzer from './domain-analyzer.js';
 import ColorManager from './color-manager.js';
 
 /**
@@ -7,33 +6,26 @@ import ColorManager from './color-manager.js';
  */
 class TabGroupManager {
   /**
-   * 도메인에 해당하는 기존 그룹을 찾습니다.
-   * @param {string} domain - 찾을 도메인
+   * siteName에 해당하는 기존 그룹을 찾습니다.
+   * @param {string} siteName - 찾을 사이트명
    * @param {number} windowId - 윈도우 ID (선택사항)
    * @returns {Promise<chrome.tabGroups.TabGroup|null>} 기존 그룹 또는 null
    */
-  static async getExistingGroup(domain, windowId = null) {
+  static async getExistingGroup(siteName, windowId = null) {
     try {
-      const siteName = DomainAnalyzer.extractSiteName(`https://${domain}`);
-
-      // 현재 윈도우의 모든 그룹 조회
       const queryOptions = windowId ? { windowId } : {};
       const groups = await chrome.tabGroups.query(queryOptions);
-
-      // 같은 사이트명을 가진 그룹 찾기
       const matchingGroup = groups.find((group) => {
         return (
           group.title && group.title.toLowerCase() === siteName.toLowerCase()
         );
       });
-
       if (matchingGroup) {
         console.log(
           `기존 그룹 발견: ${matchingGroup.title} (ID: ${matchingGroup.id})`
         );
         return matchingGroup;
       }
-
       return null;
     } catch (error) {
       console.error('기존 그룹 조회 중 오류:', error);
@@ -44,30 +36,25 @@ class TabGroupManager {
   /**
    * 새로운 탭 그룹을 생성하거나 기존 그룹을 업데이트합니다.
    * @param {chrome.tabs.Tab} tab - 그룹화할 탭
-   * @param {string} domain - 도메인
+   * @param {string} siteName - 사이트명
    * @returns {Promise<number|null>} 그룹 ID 또는 null
    */
-  static async createOrUpdateGroup(tab, domain) {
+  static async createOrUpdateGroup(tab, siteName) {
     try {
-      const siteName = DomainAnalyzer.extractSiteName(tab.url);
-
       // 기존 그룹 확인
-      const existingGroup = await this.getExistingGroup(domain, tab.windowId);
-
+      const existingGroup = await this.getExistingGroup(siteName, tab.windowId);
       if (existingGroup) {
         // 기존 그룹에 탭 추가
         await this.assignTabToGroup(tab.id, existingGroup.id);
-
         // 기존 그룹에 추가한 후에도 중복 그룹 확인 및 병합
         const duplicateGroups = await this.findDuplicateGroups(
-          domain,
+          siteName,
           tab.windowId
         );
         if (duplicateGroups.length > 1) {
           console.log('기존 그룹 사용 시 중복 그룹 발견, 병합 시도...');
           await this.mergeDuplicateGroups(duplicateGroups);
         }
-
         return existingGroup.id;
       } else {
         // 새 그룹 생성
@@ -88,18 +75,12 @@ class TabGroupManager {
    */
   static async createNewGroup(tab, siteName) {
     try {
-      // 탭을 그룹으로 만들기
-      const groupId = await chrome.tabs.group({
-        tabIds: [tab.id],
-      });
-
-      // 그룹 속성 설정
+      const groupId = await chrome.tabs.group({ tabIds: [tab.id] });
       await chrome.tabGroups.update(groupId, {
         title: siteName,
         color: this.getGroupColor(siteName),
         collapsed: false,
       });
-
       console.log(`새 그룹 생성: ${siteName} (ID: ${groupId})`);
       return groupId;
     } catch (error) {
@@ -116,11 +97,7 @@ class TabGroupManager {
    */
   static async assignTabToGroup(tabId, groupId) {
     try {
-      await chrome.tabs.group({
-        tabIds: [tabId],
-        groupId: groupId,
-      });
-
+      await chrome.tabs.group({ tabIds: [tabId], groupId: groupId });
       console.log(`탭 ${tabId}을 그룹 ${groupId}에 할당`);
       return true;
     } catch (error) {
@@ -139,29 +116,25 @@ class TabGroupManager {
   }
 
   /**
-   * 중복 그룹을 방지하기 위해 같은 도메인의 그룹이 여러 개 있는지 확인합니다.
-   * @param {string} domain - 확인할 도메인
+   * 중복 그룹을 방지하기 위해 같은 사이트명의 그룹이 여러 개 있는지 확인합니다.
+   * @param {string} siteName - 확인할 사이트명
    * @param {number} windowId - 윈도우 ID
    * @returns {Promise<chrome.tabGroups.TabGroup[]>} 중복 그룹 목록
    */
-  static async findDuplicateGroups(domain, windowId = null) {
+  static async findDuplicateGroups(siteName, windowId = null) {
     try {
-      const siteName = DomainAnalyzer.extractSiteName(`https://${domain}`);
       const queryOptions = windowId ? { windowId } : {};
       const groups = await chrome.tabGroups.query(queryOptions);
-
       const duplicateGroups = groups.filter((group) => {
         return (
           group.title && group.title.toLowerCase() === siteName.toLowerCase()
         );
       });
-
       if (duplicateGroups.length > 1) {
         console.warn(
           `중복 그룹 발견: ${siteName} (${duplicateGroups.length}개)`
         );
       }
-
       return duplicateGroups;
     } catch (error) {
       console.error('중복 그룹 확인 중 오류:', error);
@@ -179,24 +152,15 @@ class TabGroupManager {
       if (duplicateGroups.length <= 1) {
         return true;
       }
-
-      // 첫 번째 그룹을 메인 그룹으로 사용
       const mainGroup = duplicateGroups[0];
       const groupsToMerge = duplicateGroups.slice(1);
-
       for (const group of groupsToMerge) {
-        // 그룹의 모든 탭을 메인 그룹으로 이동
         const tabs = await chrome.tabs.query({ groupId: group.id });
-
         if (tabs.length > 0) {
           const tabIds = tabs.map((tab) => tab.id);
-          await chrome.tabs.group({
-            tabIds: tabIds,
-            groupId: mainGroup.id,
-          });
+          await chrome.tabs.group({ tabIds: tabIds, groupId: mainGroup.id });
         }
       }
-
       console.log(
         `중복 그룹 병합 완료: ${duplicateGroups.length}개 그룹을 1개로 통합`
       );
@@ -214,20 +178,14 @@ class TabGroupManager {
   static async cleanupEmptyGroups() {
     try {
       const groups = await chrome.tabGroups.query({});
-
       for (const group of groups) {
         const tabsInGroup = await chrome.tabs.query({ groupId: group.id });
-
-        // 그룹에 탭이 없으면 삭제
         if (tabsInGroup.length === 0) {
-          // Chrome API에서는 빈 그룹이 자동으로 삭제되지만
-          // 명시적으로 정리 로직 수행
           console.log(
             `Empty group ${group.title} will be auto-removed by Chrome`
           );
         }
       }
-
       return true;
     } catch (error) {
       console.error('Failed to cleanup empty groups:', error);
@@ -247,32 +205,6 @@ class TabGroupManager {
       return true;
     } catch (error) {
       console.error('탭 그룹 제거 중 오류:', error);
-      return false;
-    }
-  }
-
-  /**
-   * 탭 URL 변경을 처리합니다.
-   * @param {number} tabId - 탭 ID
-   * @param {string} newUrl - 새로운 URL
-   * @param {string} oldUrl - 이전 URL
-   * @returns {Promise<boolean>} 처리 성공 여부
-   */
-  static async handleTabUrlChange(tabId, newUrl, oldUrl) {
-    try {
-      // TabReassignmentManager로 위임
-      const tab = await chrome.tabs.get(tabId);
-      const changeInfo = { url: oldUrl };
-
-      // 동적 import를 사용하여 순환 참조 방지
-      const { default: TabReassignmentManager } = await import(
-        '../managers/tab-reassignment-manager.js'
-      );
-      await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
-
-      return true;
-    } catch (error) {
-      console.error('탭 URL 변경 처리 중 오류:', error);
       return false;
     }
   }

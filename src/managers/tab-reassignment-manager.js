@@ -69,7 +69,7 @@ class TabReassignmentManager {
         await chrome.tabs.ungroup(tabId);
       }
     } catch (error) {
-      console.error('Failed to remove tab from group:', error);
+      console.error('그룹에서 탭 제거 실패:', error);
     }
   }
 }
