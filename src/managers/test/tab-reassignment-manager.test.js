@@ -102,10 +102,10 @@ describe('TabReassignmentManager', () => {
       const changeInfo = { url: 'https://new-site.com' };
       const tab = { id: 1, url: 'https://new-site.com', groupId: -1 }; // 그룹 없음
 
-      jest.spyOn(DomainAnalyzer, 'extractSiteName').mockReturnValue('new-site');
       jest
         .spyOn(DomainAnalyzer, 'extractDomain')
         .mockReturnValue('new-site.com');
+      jest.spyOn(DomainAnalyzer, 'extractSiteName').mockReturnValue('new-site');
       jest.spyOn(TabGroupManager, 'createOrUpdateGroup').mockResolvedValue(3);
 
       await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
@@ -114,6 +114,19 @@ describe('TabReassignmentManager', () => {
         tab,
         'new-site.com'
       );
+    });
+
+    test('크롬 내부 페이지는 처리하지 않아야 함', async () => {
+      const tabId = 1;
+      const changeInfo = { url: 'chrome://newtab/' };
+      const tab = { id: 1, url: 'chrome://newtab/', groupId: -1 };
+
+      jest.spyOn(DomainAnalyzer, 'extractDomain').mockReturnValue('chrome://');
+      const createGroupSpy = jest.spyOn(TabGroupManager, 'createOrUpdateGroup');
+
+      await TabReassignmentManager.handleTabUpdate(tabId, changeInfo, tab);
+
+      expect(createGroupSpy).not.toHaveBeenCalled();
     });
   });
 

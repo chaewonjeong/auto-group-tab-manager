@@ -21,6 +21,13 @@ class TabReassignmentManager {
         return;
       }
 
+      // 크롬 내부 페이지는 처리하지 않음
+      const domain = DomainAnalyzer.extractDomain(tab.url);
+      if (domain === 'chrome://' || domain === 'chrome-extension://') {
+        console.log('크롬 내부 페이지, 탭 재할당 건너뜀:', tabId);
+        return;
+      }
+
       // 현재 탭의 새 siteName 추출
       const newSiteName = DomainAnalyzer.extractSiteName(tab.url);
       console.log(`탭 ${tabId} URL 변경됨 → 새 siteName: ${newSiteName}`);
@@ -28,10 +35,7 @@ class TabReassignmentManager {
       // 탭이 그룹에 속해 있지 않으면 새 그룹화 시도
       if (tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) {
         console.log(`그룹 없음, 새 그룹화 시도: ${tabId}`);
-        await TabGroupManager.createOrUpdateGroup(
-          tab,
-          DomainAnalyzer.extractDomain(tab.url)
-        );
+        await TabGroupManager.createOrUpdateGroup(tab, domain);
         return;
       }
 
