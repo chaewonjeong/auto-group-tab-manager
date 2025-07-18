@@ -1,7 +1,8 @@
 import StorageUtils from '../utils/storage-utils.js';
 
 /**
- * 세션 관리자 - 탭 그룹 세션 저장 및 복원
+ * 세션 관리자 - 순수 실행 기능만 담당 (정책 없음)
+ * 정책 결정은 SessionService에서 수행
  * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6
  */
 class SessionManager {
@@ -48,64 +49,32 @@ class SessionManager {
   }
 
   /**
-   * 세션 복원
-   * @param {string} mode 'full' | 'initial'
+   * 세션 데이터 로드 (순수 기능)
+   * @param {string} key 스토리지 키
+   * @returns {Promise<Object>} 세션 데이터
    */
-  static async restoreSession(mode) {
+  static async loadSessionData(key) {
     try {
-      if (mode === 'full') {
-        await this.restoreFullSession();
-      } else if (mode === 'initial') {
-        await this.restoreInitialSession();
-      }
+      return await StorageUtils.loadData(key);
     } catch (error) {
-      console.error('세션 복원 실패:', error);
+      console.error(`세션 데이터 로드 실패 (${key}):`, error);
+      return null;
     }
   }
 
   /**
-   * 전체 복원 모드 - 종료 시점 세션 + 누락된 초기 프리셋
+   * 세션 데이터 저장 (순수 기능)
+   * @param {string} key 스토리지 키
+   * @param {Object} data 저장할 데이터
    */
-  static async restoreFullSession() {
-    const sessionData = await StorageUtils.loadData('session');
-    const initialPreset = await StorageUtils.loadData('initialPreset');
-
-    if (!sessionData) {
-      console.log('복원할 세션 데이터가 없습니다.');
-      return;
+  static async saveSessionData(key, data) {
+    try {
+      await StorageUtils.saveData(key, data);
+      console.log(`세션 데이터 저장 완료 (${key})`);
+    } catch (error) {
+      console.error(`세션 데이터 저장 실패 (${key}):`, error);
+      throw error;
     }
-
-    // 새 윈도우 생성
-    const window = await chrome.windows.create({});
-
-    // 세션 데이터 복원
-    await this.restoreTabsAndGroups(sessionData, window.id);
-
-    // 초기 프리셋에서 누락된 항목 확인 및 복원
-    if (initialPreset) {
-      const missingItems = this.findMissingItems(sessionData, initialPreset);
-      if (missingItems.tabs.length > 0 || missingItems.groups.length > 0) {
-        await this.restoreTabsAndGroups(missingItems, window.id);
-      }
-    }
-  }
-
-  /**
-   * 초기 설정 복원 모드 - 초기 프리셋만 복원
-   */
-  static async restoreInitialSession() {
-    const initialPreset = await StorageUtils.loadData('initialPreset');
-
-    if (!initialPreset) {
-      console.log('복원할 초기 프리셋이 없습니다.');
-      return;
-    }
-
-    // 새 윈도우 생성
-    const window = await chrome.windows.create({});
-
-    // 초기 프리셋 복원
-    await this.restoreTabsAndGroups(initialPreset, window.id);
   }
 
   /**
@@ -149,48 +118,19 @@ class SessionManager {
   }
 
   /**
-   * 세션과 초기 프리셋을 비교하여 누락된 항목 찾기
-   * @param {Object} sessionData 세션 데이터
-   * @param {Object} initialPreset 초기 프리셋
-   * @returns {Object} 누락된 탭과 그룹
+   * 이벤트 리스너 등록 (순수 기능)
+   * 실제 정책 결정은 SessionService에서 수행
+   * @param {Function} onStartupCallback 시작 시 콜백
+   * @param {Function} onInstalledCallback 설치 시 콜백
    */
-  static findMissingItems(sessionData, initialPreset) {
-    const sessionUrls = new Set(sessionData.tabs?.map((tab) => tab.url) || []);
-    const sessionGroupTitles = new Set(
-      sessionData.groups?.map((group) => group.title) || []
-    );
+  static initializeSessionListeners(onStartupCallback, onInstalledCallback) {
+    if (onStartupCallback) {
+      chrome.runtime.onStartup.addListener(onStartupCallback);
+    }
 
-    const missingTabs =
-      initialPreset.tabs?.filter((tab) => !sessionUrls.has(tab.url)) || [];
-    const missingGroups =
-      initialPreset.groups?.filter(
-        (group) => !sessionGroupTitles.has(group.title)
-      ) || [];
-
-    return {
-      tabs: missingTabs,
-      groups: missingGroups,
-    };
-  }
-
-  /**
-   * 세션 관련 이벤트 리스너 초기화
-   */
-  static initializeSessionListeners() {
-    // 브라우저 시작 시 세션 복원
-    chrome.runtime.onStartup.addListener(async () => {
-      const settings = await StorageUtils.loadSettings();
-      if (settings.restoreMode) {
-        await this.restoreSession(settings.restoreMode);
-      }
-    });
-
-    // 확장 설치/업데이트 시 초기화
-    chrome.runtime.onInstalled.addListener(async (details) => {
-      if (details.reason === 'install') {
-        console.log('확장 프로그램 설치됨 - 세션 관리자 초기화');
-      }
-    });
+    if (onInstalledCallback) {
+      chrome.runtime.onInstalled.addListener(onInstalledCallback);
+    }
   }
 
   /**
