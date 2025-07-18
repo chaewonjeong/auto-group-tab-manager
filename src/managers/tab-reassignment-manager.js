@@ -1,7 +1,4 @@
-import DomainAnalyzer from '../core/domain-analyzer.js';
 import TabGroupManager from '../core/tab-group-manager.js';
-import StorageUtils from '../utils/storage-utils.js';
-import EventThrottler from '../utils/event-throttler.js';
 
 /**
  * 탭 URL 변경 시 그룹 재할당을 관리하는 클래스
@@ -13,46 +10,23 @@ class TabReassignmentManager {
    * @param {number} tabId - 탭 ID
    * @param {Object} changeInfo - 변경 정보
    * @param {chrome.tabs.Tab} tab - 탭 객체
+   * @param {string[]} [excludedSiteNames] - 제외 사이트명 목록 (외부에서 주입)
    */
   static async handleTabUpdate(tabId, changeInfo, tab) {
     try {
-      // URL이 변경되지 않았으면 처리하지 않음
-      if (!changeInfo.url) {
-        return;
-      }
-
-      // 크롬 내부 페이지는 처리하지 않음
-      const domain = DomainAnalyzer.extractDomain(tab.url);
-      if (domain === 'chrome://' || domain === 'chrome-extension://') {
-        console.log('크롬 내부 페이지, 탭 재할당 건너뜀:', tabId);
-        return;
-      }
-
-      // 현재 탭의 새 siteName 추출
-      const newSiteName = DomainAnalyzer.extractSiteName(tab.url);
-      console.log(`탭 ${tabId} URL 변경됨 → 새 siteName: ${newSiteName}`);
-
+      if (!changeInfo.url) return;
+      const siteName = tab.siteName || '';
       // 탭이 그룹에 속해 있지 않으면 새 그룹화 시도
       if (tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) {
-        console.log(`그룹 없음, 새 그룹화 시도: ${tabId}`);
-        await TabGroupManager.createOrUpdateGroup(tab, domain);
+        await TabGroupManager.createOrUpdateGroup(tab, siteName);
         return;
       }
-
       // 현재 그룹 정보 가져오기
       const currentGroup = await chrome.tabGroups.get(tab.groupId);
       const groupTitle = (currentGroup.title || '').toLowerCase().trim();
-      const newSiteNameLower = newSiteName.toLowerCase().trim();
-
-      // siteName과 그룹 title 비교
-      if (groupTitle !== newSiteNameLower) {
-        console.log(
-          `그룹 mismatch 감지: 그룹 title '${groupTitle}' vs 새 siteName '${newSiteName}' (탭 ${tabId})`
-        );
-        // 재할당 로직 실행
-        await this.reassignTabToCorrectGroup(tab, newSiteName, groupTitle);
-      } else {
-        console.log(`그룹 일치: '${groupTitle}' (탭 ${tabId}) - 재할당 불필요`);
+      const siteNameLower = siteName.toLowerCase().trim();
+      if (groupTitle !== siteNameLower) {
+        await this.reassignTabToCorrectGroup(tab, siteName, groupTitle);
       }
     } catch (error) {
       console.error('탭 업데이트 처리 중 오류:', error);
@@ -62,35 +36,22 @@ class TabReassignmentManager {
   /**
    * 탭을 올바른 그룹으로 재할당합니다.
    * @param {chrome.tabs.Tab} tab - 탭 객체
-   * @param {string} newDomain - 새로운 도메인
-   * @param {string} oldDomain - 이전 도메인
+   * @param {string} newSiteName - 새로운 사이트명
+   * @param {string} oldGroupTitle - 이전 그룹명
    */
-  static async reassignTabToCorrectGroup(tab, newDomain, oldDomain) {
+  static async reassignTabToCorrectGroup(tab, newSiteName, oldGroupTitle) {
     try {
-      console.log(`탭 재할당 시작: ${tab.id} (${oldDomain} → ${newDomain})`);
-
       // 1. 현재 그룹에서 제거
       await this.removeFromCurrentGroup(tab.id);
-
-      // 2. 새 도메인이 제외 목록에 있는지 확인
-      if (await this.shouldExcludeFromGrouping(newDomain)) {
-        console.log(`제외 도메인으로 그룹화 안함: ${newDomain}`);
-        return; // 그룹화하지 않음
-      }
-
-      // 3. Service Worker의 processTab 함수를 통해 재그룹화
-      // 이를 위해 메시지를 보내거나 직접 호출
-      // 여기서는 직접 TabGroupManager를 사용하여 처리
+      // 2. 새 그룹에 할당
       const targetGroupId = await TabGroupManager.createOrUpdateGroup(
         tab,
-        DomainAnalyzer.extractDomain(tab.url)
+        newSiteName
       );
-
       if (targetGroupId) {
         console.log(`✓ 탭 재할당 완료: 탭 ${tab.id} → 그룹 ${targetGroupId}`);
       }
-
-      // 4. 빈 그룹 정리
+      // 3. 빈 그룹 정리
       await TabGroupManager.cleanupEmptyGroups();
     } catch (error) {
       console.error('탭 재할당 중 오류:', error);
@@ -109,44 +70,6 @@ class TabReassignmentManager {
       }
     } catch (error) {
       console.error('Failed to remove tab from group:', error);
-    }
-  }
-
-  /**
-   * 새 도메인에 맞는 그룹을 찾거나 생성합니다.
-   * @param {string} domain - 도메인
-   * @param {chrome.tabs.Tab} tab - 탭 객체
-   * @returns {Promise<Object|number|null>} 그룹 객체 또는 그룹 ID
-   */
-  static async findOrCreateTargetGroup(domain, tab) {
-    try {
-      // 기존 그룹 찾기
-      const existingGroup = await TabGroupManager.getExistingGroup(domain);
-      if (existingGroup) {
-        return existingGroup;
-      }
-
-      // 새 그룹 생성
-      return await TabGroupManager.createOrUpdateGroup(tab, domain);
-    } catch (error) {
-      console.error('그룹 찾기/생성 중 오류:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 도메인이 그룹화에서 제외되어야 하는지 확인합니다.
-   * @param {string} domain - 확인할 도메인
-   * @returns {Promise<boolean>} 제외 여부
-   */
-  static async shouldExcludeFromGrouping(domain) {
-    try {
-      const settings = await StorageUtils.loadSettings();
-      const excludedDomains = settings?.excludedDomains || [];
-      return DomainAnalyzer.isExcludedDomain(domain, excludedDomains);
-    } catch (error) {
-      console.error('제외 도메인 확인 중 오류:', error);
-      return false;
     }
   }
 }
