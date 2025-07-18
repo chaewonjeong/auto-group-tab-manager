@@ -57,6 +57,17 @@ class TabGroupManager {
       if (existingGroup) {
         // 기존 그룹에 탭 추가
         await this.assignTabToGroup(tab.id, existingGroup.id);
+
+        // 기존 그룹에 추가한 후에도 중복 그룹 확인 및 병합
+        const duplicateGroups = await this.findDuplicateGroups(
+          domain,
+          tab.windowId
+        );
+        if (duplicateGroups.length > 1) {
+          console.log('기존 그룹 사용 시 중복 그룹 발견, 병합 시도...');
+          await this.mergeDuplicateGroups(duplicateGroups);
+        }
+
         return existingGroup.id;
       } else {
         // 새 그룹 생성

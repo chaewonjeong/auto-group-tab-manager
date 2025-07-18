@@ -194,15 +194,7 @@ async function processTab(tab, allowReassignment = false) {
         `✓ 탭 그룹화 완료: 탭 ${tab.id} → 그룹 ${groupId} (${siteName})`
       );
 
-      // 7. 중복 그룹 확인 및 병합
-      const duplicateGroups = await TabGroupManager.findDuplicateGroups(
-        domain,
-        tab.windowId
-      );
-      if (duplicateGroups.length > 1) {
-        console.log('중복 그룹 발견, 병합 시도...');
-        await TabGroupManager.mergeDuplicateGroups(duplicateGroups);
-      }
+      // 중복 그룹 확인 및 병합은 TabGroupManager.createOrUpdateGroup에서 처리됨
     } else {
       console.warn('탭 그룹화 실패:', tab.id, domain);
     }
