@@ -131,7 +131,7 @@ describe('TabReassignmentManager', () => {
       const tab = { id: 1, url: 'https://new-site.com' };
       const newDomain = 'new-site';
       const oldDomain = 'old-site';
-      const targetGroup = { id: 3, title: 'new-site' };
+      const targetGroupId = 3;
 
       jest
         .spyOn(TabReassignmentManager, 'removeFromCurrentGroup')
@@ -140,9 +140,8 @@ describe('TabReassignmentManager', () => {
         .spyOn(TabReassignmentManager, 'shouldExcludeFromGrouping')
         .mockResolvedValue(false);
       jest
-        .spyOn(TabReassignmentManager, 'findOrCreateTargetGroup')
-        .mockResolvedValue(targetGroup);
-      jest.spyOn(TabGroupManager, 'assignTabToGroup').mockResolvedValue(true);
+        .spyOn(TabGroupManager, 'createOrUpdateGroup')
+        .mockResolvedValue(targetGroupId);
       jest.spyOn(TabGroupManager, 'cleanupEmptyGroups').mockResolvedValue();
 
       await TabReassignmentManager.reassignTabToCorrectGroup(
@@ -154,10 +153,10 @@ describe('TabReassignmentManager', () => {
       expect(
         TabReassignmentManager.removeFromCurrentGroup
       ).toHaveBeenCalledWith(1);
-      expect(
-        TabReassignmentManager.findOrCreateTargetGroup
-      ).toHaveBeenCalledWith(newDomain, tab);
-      expect(TabGroupManager.assignTabToGroup).toHaveBeenCalledWith(1, 3);
+      expect(TabGroupManager.createOrUpdateGroup).toHaveBeenCalledWith(
+        tab,
+        'new-site.com'
+      );
       expect(TabGroupManager.cleanupEmptyGroups).toHaveBeenCalled();
     });
   });

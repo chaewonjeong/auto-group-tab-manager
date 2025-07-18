@@ -44,26 +44,30 @@ class TabReassignmentManager {
    */
   static async reassignTabToCorrectGroup(tab, newDomain, oldDomain) {
     try {
+      console.log(`탭 재할당 시작: ${tab.id} (${oldDomain} → ${newDomain})`);
+
       // 1. 현재 그룹에서 제거
       await this.removeFromCurrentGroup(tab.id);
 
       // 2. 새 도메인이 제외 목록에 있는지 확인
       if (await this.shouldExcludeFromGrouping(newDomain)) {
+        console.log(`제외 도메인으로 그룹화 안함: ${newDomain}`);
         return; // 그룹화하지 않음
       }
 
-      // 3. 새 도메인에 맞는 그룹 찾기 또는 생성
-      const targetGroup = await this.findOrCreateTargetGroup(newDomain, tab);
+      // 3. Service Worker의 processTab 함수를 통해 재그룹화
+      // 이를 위해 메시지를 보내거나 직접 호출
+      // 여기서는 직접 TabGroupManager를 사용하여 처리
+      const targetGroupId = await TabGroupManager.createOrUpdateGroup(
+        tab,
+        DomainAnalyzer.extractDomain(tab.url)
+      );
 
-      // 4. 탭을 새 그룹에 할당
-      if (targetGroup) {
-        await TabGroupManager.assignTabToGroup(
-          tab.id,
-          targetGroup.id || targetGroup
-        );
+      if (targetGroupId) {
+        console.log(`✓ 탭 재할당 완료: 탭 ${tab.id} → 그룹 ${targetGroupId}`);
       }
 
-      // 5. 빈 그룹 정리
+      // 4. 빈 그룹 정리
       await TabGroupManager.cleanupEmptyGroups();
     } catch (error) {
       console.error('탭 재할당 중 오류:', error);

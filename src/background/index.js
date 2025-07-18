@@ -99,8 +99,10 @@ async function checkFileUrlPermission() {
 
 /**
  * 탭 처리 함수 - 실제 자동 그룹화 로직 (성능 모니터링 포함)
+ * @param {Object} tab - 처리할 탭 객체
+ * @param {boolean} allowReassignment - 이미 그룹화된 탭의 재할당 허용 여부
  */
-async function processTab(tab) {
+async function processTab(tab, allowReassignment = false) {
   // 유효한 URL이 없는 경우 처리하지 않음
   if (!tab.url || tab.url === '') {
     console.log('유효하지 않은 URL, 탭 처리 건너뜀:', tab.id);
@@ -146,8 +148,11 @@ async function processTab(tab) {
       return;
     }
 
-    // 5. 이미 그룹화된 탭인지 확인
-    if (tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+    // 5. 이미 그룹화된 탭인지 확인 (재할당이 허용되지 않은 경우에만)
+    if (
+      !allowReassignment &&
+      tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE
+    ) {
       console.log(
         '이미 그룹화된 탭, 처리 건너뜀:',
         tab.id,
@@ -393,7 +398,9 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     // 로딩 완료 시에도 처리 (URL이 늦게 설정되는 경우 대비)
     if (changeInfo.status === 'complete' && tab.url && tab.url !== '') {
       console.log('탭 로딩 완료:', tabId, tab.url);
-      await processTab(tab);
+      // URL 변경이 있었다면 재할당 허용, 그렇지 않으면 새 탭만 처리
+      const allowReassignment = !!changeInfo.url;
+      await processTab(tab, allowReassignment);
     }
   } catch (error) {
     console.error('탭 업데이트 이벤트 처리 중 오류:', error);
