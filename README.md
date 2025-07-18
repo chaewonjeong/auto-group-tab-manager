@@ -2,6 +2,9 @@
 
 Chrome extension for automatic tab grouping by domain with preset management and session restoration.
 
+![화면 기록 2025-07-18 오후 10 26 35](https://github.com/user-attachments/assets/cdd51c27-1c8c-4dae-b0a9-54b9b59c59d2)
+
+
 ---
 
 ## Features
