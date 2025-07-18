@@ -167,16 +167,31 @@ async function processTab(tab, allowReassignment = false) {
           groupTitle
         );
         return;
-      } else if (!allowReassignment) {
-        console.log(
-          '이미 올바른 그룹에 있는 탭, 처리 건너뜀:',
-          tab.id,
-          'groupId:',
-          tab.groupId,
-          'title:',
-          groupTitle
+      } else {
+        if (!allowReassignment) {
+          console.log(
+            '이미 올바른 그룹에 있는 탭, 처리 건너뜀:',
+            tab.id,
+            'groupId:',
+            tab.groupId,
+            'title:',
+            groupTitle
+          );
+        }
+
+        // 이미 올바른 그룹에 있어도 중복 그룹 확인은 항상 수행
+        const duplicateGroups = await TabGroupManager.findDuplicateGroups(
+          domain,
+          tab.windowId
         );
-        return;
+        if (duplicateGroups.length > 1) {
+          console.log('이미 올바른 그룹에 있지만 중복 그룹 발견, 병합 시도...');
+          await TabGroupManager.mergeDuplicateGroups(duplicateGroups);
+        }
+
+        if (!allowReassignment) {
+          return;
+        }
       }
     }
 
