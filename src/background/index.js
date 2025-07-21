@@ -307,7 +307,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     await SessionService.handleExtensionInstall(context, SessionManager);
 
     // 온보딩 페이지 열기
-    await APIUtils.safeTabCreate({ url: 'onboarding.html' });
+    await APIUtils.safeTabCreate({
+      url: chrome.runtime.getURL('src/features/onboarding/onboarding.html'),
+    });
   }
 
   // 설치 후 종합 테스트 실행
@@ -642,6 +644,43 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           });
       } else {
         sendResponse({ success: false, error: '프리셋 ID가 필요합니다.' });
+      }
+      break;
+
+    case 'GROUP_TAB':
+      // 온보딩에서 특정 탭 그룹화 요청
+      if (message.tabId) {
+        TabService.handleTabCreated({ id: message.tabId }, true)
+          .then(() => {
+            sendResponse({ success: true });
+          })
+          .catch((error) => {
+            console.error('탭 그룹화 실패:', error);
+            sendResponse({ success: false, error: error.message });
+          });
+      } else {
+        sendResponse({ success: false, error: 'tabId required' });
+      }
+      break;
+
+    case 'SETTINGS_CHANGED':
+      // 온보딩에서 설정 변경 알림
+      if (message.settings) {
+        // 상태 업데이트
+        Object.entries(message.settings).forEach(([key, value]) => {
+          if (key === 'autoGrouping') {
+            state.isAutoGroupingEnabled = value;
+          } else {
+            state[key] = value;
+          }
+        });
+
+        // 설정 저장
+        saveSettings().then(() => {
+          sendResponse({ success: true });
+        });
+      } else {
+        sendResponse({ success: false, error: 'settings required' });
       }
       break;
 

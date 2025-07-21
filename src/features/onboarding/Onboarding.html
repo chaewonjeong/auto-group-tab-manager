@@ -10,66 +10,112 @@
 
 <body>
     <div class="onboarding-container">
-        <header class="onboarding-header">
-            <h1>Tab Group Manager에 오신 것을 환영합니다!</h1>
-            <p>탭을 자동으로 그룹화하여 더 체계적인 브라우징 경험을 시작하세요.</p>
+        <!-- 환영 섹션 -->
+        <header class="welcome-section">
+            <div class="logo-container">
+                <img src="../../assets/icons/icon.svg" alt="Tab Group Manager" class="logo">
+            </div>
+            <h1 class="welcome-title">Tab Group Manager에 오신 것을 환영합니다!</h1>
+            <p class="subtitle">탭을 자동으로 그룹화하여 더 나은 브라우징 경험을 제공합니다.</p>
         </header>
 
-        <main class="onboarding-main">
-            <!-- Feature Introduction -->
-            <section class="intro-section">
-                <div class="feature-list">
-                    <div class="feature-item">
-                        <h3>🗂️ 자동 그룹화</h3>
-                        <p>새로 열리는 탭이 도메인별로 자동으로 그룹화됩니다.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>💾 프리셋 관리</h3>
-                        <p>자주 사용하는 탭 구성을 프리셋으로 저장하고 재사용하세요.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>🔄 세션 복원</h3>
-                        <p>브라우저 재시작 후에도 중요한 탭 그룹을 복원합니다.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>🧭 탭 네비게이터</h3>
-                        <p>모든 탭과 그룹을 한눈에 보고 쉽게 관리하세요.</p>
-                    </div>
+        <!-- 기능 소개 섹션 -->
+        <section class="features-section">
+            <h2>주요 기능</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">🗂️</div>
+                    <h3>자동 그룹화</h3>
+                    <p>도메인별로 탭을 자동으로 그룹화하여 정리합니다.</p>
                 </div>
-            </section>
-
-            <!-- Initial Setup -->
-            <section class="setup-section">
-                <h2>초기 설정</h2>
-                <div class="setup-options">
-                    <p>기존에 열려있는 탭들을 어떻게 처리할까요?</p>
-
-                    <div class="option-group">
-                        <label class="option-card">
-                            <input type="radio" name="initial-setup" value="apply-existing" id="apply-existing">
-                            <div class="option-content">
-                                <h3>기존 탭에도 적용</h3>
-                                <p>현재 열려있는 모든 탭을 도메인별로 그룹화합니다.</p>
-                            </div>
-                        </label>
-
-                        <label class="option-card">
-                            <input type="radio" name="initial-setup" value="new-tabs-only" id="new-tabs-only" checked>
-                            <div class="option-content">
-                                <h3>새로 열리는 탭부터 적용</h3>
-                                <p>기존 탭은 그대로 두고, 새로 열리는 탭부터만 그룹화합니다.</p>
-                            </div>
-                        </label>
-                    </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🎨</div>
+                    <h3>브랜드 색상</h3>
+                    <p>각 사이트의 브랜드 색상으로 그룹을 구분합니다.</p>
                 </div>
-            </section>
+                <div class="feature-item">
+                    <div class="feature-icon">💾</div>
+                    <h3>프리셋 관리</h3>
+                    <p>자주 사용하는 탭 구성을 저장하고 복원합니다.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔄</div>
+                    <h3>세션 복원</h3>
+                    <p>브라우저 재시작 후에도 탭 그룹을 복원합니다.</p>
+                </div>
+            </div>
+        </section>
 
-            <!-- Get Started Button -->
-            <section class="start-section">
-                <button id="get-started-btn" class="btn btn-primary btn-large">Get Started</button>
-                <p class="help-text">언제든지 확장 아이콘을 클릭하여 설정을 변경할 수 있습니다.</p>
-            </section>
-        </main>
+        <!-- 초기 설정 섹션 -->
+        <section class="setup-section">
+            <h2>초기 설정</h2>
+            <p class="setup-description">현재 열려있는 탭들을 어떻게 처리할까요?</p>
+
+            <div class="option-group">
+                <label class="option-label" for="apply-existing">
+                    <input type="radio" name="existing-tabs" value="apply" id="apply-existing">
+                    <div class="option-content">
+                        <div class="option-header">
+                            <span class="option-icon">✅</span>
+                            <span class="option-text">기존 탭에도 적용</span>
+                        </div>
+                        <p class="option-description">
+                            현재 열려있는 모든 탭을 도메인별로 그룹화합니다.
+                            <br>
+                            <small>권장: 많은 탭이 열려있을 때 유용합니다.</small>
+                        </p>
+                    </div>
+                </label>
+
+                <label class="option-label" for="skip-existing">
+                    <input type="radio" name="existing-tabs" value="skip" id="skip-existing">
+                    <div class="option-content">
+                        <div class="option-header">
+                            <span class="option-icon">🆕</span>
+                            <span class="option-text">새로 열리는 탭부터 적용</span>
+                        </div>
+                        <p class="option-description">
+                            기존 탭은 그대로 두고 새로 열리는 탭부터만 그룹화합니다.
+                            <br>
+                            <small>권장: 현재 탭 구성을 유지하고 싶을 때 유용합니다.</small>
+                        </p>
+                    </div>
+                </label>
+            </div>
+        </section>
+
+        <!-- 액션 섹션 -->
+        <section class="action-section">
+            <button id="get-started-btn" class="btn btn-primary" disabled>
+                <span class="btn-text">Get Started</span>
+                <span class="btn-icon">🚀</span>
+            </button>
+            <div id="loading-indicator" class="loading-indicator" style="display: none;">
+                <div class="spinner"></div>
+                <span class="loading-text">설정을 적용하는 중...</span>
+            </div>
+        </section>
+
+        <!-- 정보 섹션 -->
+        <section class="info-section">
+            <div class="info-card">
+                <h3>💡 알아두세요</h3>
+                <ul>
+                    <li>언제든지 설정에서 이 옵션을 변경할 수 있습니다.</li>
+                    <li>확장 아이콘을 클릭하여 프리셋과 설정에 접근할 수 있습니다.</li>
+                    <li>로컬 파일 그룹화는 별도 권한이 필요합니다.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 푸터 -->
+        <footer class="onboarding-footer">
+            <p class="version-info">Tab Group Manager v1.0.0</p>
+            <p class="help-text">
+                도움이 필요하시면
+                <a href="#" id="help-link">도움말</a>을 확인하세요.
+            </p>
+        </footer>
     </div>
 
     <script src="onboarding.js"></script>
