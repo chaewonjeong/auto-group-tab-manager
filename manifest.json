@@ -27,7 +27,7 @@
     }
   ],
 
-  "options_page": "options.html",
+  "options_page": "src/features/options/options.html",
 
   "icons": {
     "128": "assets/icons/icon.svg"
